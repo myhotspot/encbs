@@ -90,4 +90,8 @@ module Backup
 
     File.open("#{jar_path}/jar", "w").puts path
   end
+
+  def self.fetch_jars(path)
+    Dir["#{path}/*"].map {|backup| backup.match(/[0-9a-z]{32}$/)[0]}.compact.sort
+  end
 end

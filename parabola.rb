@@ -44,10 +44,10 @@ end
 @root_path = "backup/#{@hostname}"
 
 if opts.list?
-  puts "List of backups:\n"
+  puts "List of jars:\n"
 
-  Backup::fetch_versions_of_backups(@root_path).each do |backup|
-    puts "    #{backup}"
+  Backup::fetch_jars(@root_path).each do |jar|
+    puts "    #{jar}: #{open("#{@root_path}/#{jar}/jar").readlines[0].chomp}"
   end
 
   exit
