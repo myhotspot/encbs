@@ -88,6 +88,8 @@ module Backup
   def self.create_jar(jar_path, path)
     FileUtils.mkdir_p(jar_path) unless Dir.exists?(jar_path)
 
+    path += '/' if Dir.exists? path
+
     File.open("#{jar_path}/jar", "w").puts path
   end
 
