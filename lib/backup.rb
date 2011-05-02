@@ -1,4 +1,24 @@
 module Backup
+  def self.file_stat(file, timestamp)
+    files = {}
+
+    stat = File.new(file).stat
+    files[file] = {
+      :uid => stat.uid,
+      :gid => stat.gid,
+      :mode => stat.mode,
+      :timestamp => timestamp
+    }
+
+    unless Dir.exists?(file)
+      files[file][:checksum] = Digest::MD5.hexdigest(File.open(file).read)
+    end
+
+    files
+  rescue Exception => e
+    STDERR.puts e
+  end
+
   def self.create_hash_for_path(path, timestamp)
     files = {}
 
@@ -8,22 +28,10 @@ module Backup
       matches << path
 
       matches.each do |match|
-        begin
-          stat = File.new(match).stat
-          files[match] = {
-            :uid => stat.uid,
-            :gid => stat.gid,
-            :mode => stat.mode,
-            :timestamp => timestamp
-          }
-
-          unless Dir.exists?(match)
-            files[match][:checksum] = Digest::MD5.hexdigest(File.open(match).read)
-          end
-        rescue Exception => e
-          STDERR.puts e
-        end
+        files.merge!(Backup::file_stat(match, timestamp))
       end
+    else
+      files = Backup::file_stat(path, timestamp)
     end
 
     files
@@ -75,5 +83,11 @@ module Backup
 
   def self.fetch_backup_index(version)
     YAML::load(open("#{version}/index.yml").read)
+  end
+
+  def self.create_jar(jar_path, path)
+    FileUtils.mkdir_p(jar_path) unless Dir.exists?(jar_path)
+
+    File.open("#{jar_path}/jar", "w").puts path
   end
 end
