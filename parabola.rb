@@ -19,14 +19,14 @@ require './lib/backup.rb'
 
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
-  on :i, :increment, "Use increment mode for backup (default: false)"
   on :c, :config, "Use config file to upload backup", true
-  on :v, :verbose, "Verbose mode"
-  on :k, :key, "Key to encrypt/decrypt backup", true
-  on :g, :"generate-key", "Generate key", true
-  on :r, :rescue, "What rescue from backup (default: all)", true
   on :d, :date, "Date for return to back up", true
+  on :g, :"generate-key", "Generate key", true
+  on :i, :increment, "Use increment mode for backup (default: false)"
+  on :k, :key, "Key to encrypt/decrypt backup", true
   on :l, :list, "List of full backups"
+  on :r, :rescue, "What rescue from backup (default: all)", true
+  on :v, :verbose, "Verbose mode"
 
   banner "Usage:\n    $ parabola [options]\n\nOptions:"
 end
