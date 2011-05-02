@@ -8,16 +8,20 @@ module Backup
       matches << path
 
       matches.each do |match|
-        stat = File.new(match).stat
-        files[match] = {
-          :uid => stat.uid,
-          :gid => stat.gid,
-          :mode => stat.mode,
-          :timestamp => timestamp
-        }
+        begin
+          stat = File.new(match).stat
+          files[match] = {
+            :uid => stat.uid,
+            :gid => stat.gid,
+            :mode => stat.mode,
+            :timestamp => timestamp
+          }
 
-        unless Dir.exists?(match)
-          files[match][:checksum] = Digest::MD5.hexdigest(File.open(match).read)
+          unless Dir.exists?(match)
+            files[match][:checksum] = Digest::MD5.hexdigest(File.open(match).read)
+          end
+        rescue Exception => e
+          STDERR.puts e
         end
       end
     end

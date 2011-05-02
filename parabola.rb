@@ -53,8 +53,10 @@ end
 if opts.add?
   paths = opts[:add].split(" ")
 
-  paths.each do |path|
+  paths = paths.map do |path|
+    path = File.expand_path path
     fail "Path \"#{path}\" not exists." unless File.exists? path
+    path
   end
 
   @files = {}
