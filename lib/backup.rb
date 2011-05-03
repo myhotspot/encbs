@@ -68,18 +68,18 @@ module Backup
     end
   end
 
-  def self.fetch_versions_of_backups(path)
+  def self.fetch_versions_of_backup(path)
     Dir["#{path}/*"].map do |backup|
       backup.match(/[0-9]{12}$/)[0] if backup.match(/[0-9]{12}$/)
     end.compact.sort
   end
 
   def self.last_backup_path(path)
-    Backup::fetch_versions_of_backups(path)[-1]
+    Backup::fetch_versions_of_backup(path)[-1]
   end
 
   def self.backup_diff_versions(path)
-    Backup::fetch_versions_of_backups("#{path}/diff")
+    Backup::fetch_versions_of_backup("#{path}/diff")
   end
 
   def self.backup_diff_present?(path)
@@ -135,5 +135,9 @@ module Backup
 
   def self.decrypt_data(key, data)
     Backup::aes(:decrypt, key, data)
+  end
+
+  def self.jar_path(root_path, jar)
+    "#{root_path}/#{Digest::MD5.hexdigest(jar)}"
   end
 end

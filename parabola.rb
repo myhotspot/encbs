@@ -79,9 +79,31 @@ if opts.date?
     start_date = Backup::parse_version_to_time date[0]
     end_date = Backup::parse_version_to_time date[1], true
 
+    puts_fail "Last date less than start date" if start_date > end_date
     puts start_date, end_date
   else
     puts Backup::parse_version_to_time date[0]
+  end
+
+  exit
+end
+
+if opts.jar?
+  jar_path = Backup::jar_path(@root_path, File.expand_path(opts[:jar]))
+
+  versions = Backup::fetch_versions_of_backup jar_path
+
+  unless versions.empty?
+    puts "Versions of backup: #{opts[:jar]}"
+    versions.each do |version|
+      puts "    #{Backup::parse_version_to_time version}"
+
+      Backup::backup_diff_versions("#{jar_path}/#{version}").each do |diff|
+        puts "      diff: #{Backup::parse_version_to_time diff}"
+      end
+    end
+  else
+    puts "Versions doesn't exists for backup: #{opts[:jar]}"
   end
 
   exit
