@@ -39,7 +39,7 @@ if ARGV.empty?
   exit
 end
 
-@timestamp = Time.now.strftime "%y%m%d%H%M%S"
+@timestamp = Time.now.utc.strftime "%y%m%d%H%M%S"
 @hostname = Socket.gethostname
 @root_path = "backup/#{@hostname}"
 
@@ -66,6 +66,7 @@ if opts.add?
     @files = Backup::create_hash_for_path(path, @timestamp)
     @jar_path = "#{@root_path}/#{Digest::MD5.hexdigest(path)}"
 
+    #FIXME: Incremental mode ONLY for directories
     unless opts.increment?
       current_path = "#{@jar_path}/#{@timestamp}"
 
@@ -107,13 +108,17 @@ if opts.add?
         end
       end
 
-      diff_path = "#{current_path}/diff/#{@timestamp}"
+      if @files.length > 1
+        diff_path = "#{current_path}/diff/#{@timestamp}"
+      else
+        diff_path = current_path
+      end
 
       unless new_files.empty?
         Backup::create_backup_index(diff_path, @files)
         Backup::create_backup_files(diff_path, new_files)
       else
-        puts "Nothing to backup"
+        puts "Nothing to backup: #{Backup::semantic_path(path)}"
       end
     end
   end

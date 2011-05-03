@@ -66,7 +66,9 @@ module Backup
   end
 
   def self.fetch_versions_of_backups(path)
-    Dir["#{path}/*"].map {|backup| backup.match(/[0-9]{12}$/)[0]}.compact.sort
+    Dir["#{path}/*"].map do |backup|
+      backup.match(/[0-9]{12}$/)[0] if backup.match(/[0-9]{12}$/)
+    end.compact.sort
   end
 
   def self.last_backup_path(path)
@@ -88,12 +90,18 @@ module Backup
   def self.create_jar(jar_path, path)
     FileUtils.mkdir_p(jar_path) unless Dir.exists?(jar_path)
 
-    path += '/' if Dir.exists? path
-
-    File.open("#{jar_path}/jar", "w").puts path
+    File.open("#{jar_path}/jar", "w").puts Backup::semantic_path(path)
   end
 
   def self.fetch_jars(path)
     Dir["#{path}/*"].map {|backup| backup.match(/[0-9a-z]{32}$/)[0]}.compact.sort
+  end
+
+  def self.semantic_path(path)
+    if Dir.exists? path
+      path += '/'
+    else
+      path
+    end
   end
 end
