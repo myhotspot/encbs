@@ -4,12 +4,19 @@ require 'yaml'
 require 'digest'
 require 'socket'
 require 'fileutils'
+require 'openssl'
+
+def puts_fail(msg)
+  STDERR.puts "Error: #{msg}"
+
+  exit msg.length
+end
 
 begin
   require 'slop'
   # require 'fog'
 rescue Exception => e
-  fail %Q{This script use these gems: fog, slop.
+  puts_fail %Q{This script use these gems: fog, slop.
     Make sure that you have them all.
     If you don't have, you may install them: $ gem install fog slop
   }
@@ -22,11 +29,11 @@ opts = Slop.parse :help => true do
   on :c, :config, "Use config file to upload backup", true
   on :d, :date, "Date for return to back up", true
   on :f, :find, "Find file or directory in backups"
-  on :g, :"generate-key", "Generate key", true
+  on :g, :generate, "Generate key", true
   on :i, :increment, "Use increment mode for backup (default: false)"
   on :j, :jar, "Versions of jar (option: hash or path)", true
   on :k, :key, "Key to encrypt/decrypt backup", true
-  on :l, :list, "List of jars" # FIXME
+  on :l, :list, "List of jars"
   on :r, :rescue, "What rescue from backup (default: all)", true
   on :t, :to, "Recovery to path (default: absolute path)"
   on :v, :verbose, "Verbose mode"
@@ -53,12 +60,39 @@ if opts.list?
   exit
 end
 
+if opts.key?
+  @key = open(opts[:key]).read
+end
+
+if opts.generate?
+  File.open(opts[:generate], "w") do |f|
+    10.times {f.puts Digest::SHA512.digest "#{rand}#{Time.now}"}
+  end
+
+  exit
+end
+
+if opts.date?
+  date = opts[:date].gsub(".", "").gsub(" ", "").gsub(":", "").split("-")
+
+  unless date.length == 1
+    start_date = Backup::parse_version_to_time date[0]
+    end_date = Backup::parse_version_to_time date[1], true
+
+    puts start_date, end_date
+  else
+    puts Backup::parse_version_to_time date[0]
+  end
+
+  exit
+end
+
 if opts.add?
   paths = opts[:add].split(" ")
 
   paths = paths.map do |path|
     path = File.expand_path path
-    fail "Path \"#{path}\" not exists." unless File.exists? path
+    puts_fail "Path \"#{path}\" not exists." unless File.exists? path
     path
   end
 
@@ -66,18 +100,17 @@ if opts.add?
     @files = Backup::create_hash_for_path(path, @timestamp)
     @jar_path = "#{@root_path}/#{Digest::MD5.hexdigest(path)}"
 
-    #FIXME: Incremental mode ONLY for directories
     unless opts.increment?
       current_path = "#{@jar_path}/#{@timestamp}"
 
       unless @files.empty?
         Backup::create_jar(@jar_path, path)
-        Backup::create_backup(current_path, @files)
+        Backup::create_backup(current_path, @files, @key)
       else
-        fail "Nothing to backup"
+        puts_fail "Nothing to backup"
       end
     else
-      fail "Before create incremental backup, you need create full backup." if Backup::last_backup_path(@jar_path).nil?
+      puts_fail "Before create incremental backup, you need to create a full backup." if Backup::last_backup_path(@jar_path).nil?
 
       current_path = "#{@jar_path}/#{Backup::last_backup_path(@jar_path)}"
 
@@ -116,12 +149,12 @@ if opts.add?
 
       unless new_files.empty?
         Backup::create_backup_index(diff_path, @files)
-        Backup::create_backup_files(diff_path, new_files)
+        Backup::create_backup_files(diff_path, new_files, @key)
       else
         puts "Nothing to backup: #{Backup::semantic_path(path)}"
       end
     end
   end
 else
-  fail "Before create backup, you must add path." if opts.increment?
+  puts_fail "Before create backup, you must add path." if opts.increment?
 end

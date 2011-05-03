@@ -43,24 +43,27 @@ module Backup
     File.open("#{path}/index.yml", "w").puts hash_files.to_yaml
   end
 
-  def self.create_backup_files(path, files)
+  def self.create_backup_files(path, files, key = nil)
     FileUtils.mkdir_p(path) unless Dir.exists?(path)
 
-    files.each {|file| Backup::copy_file_to_backup(path, file)}
+    files.each {|file| Backup::copy_file_to_backup(path, file, key)}
   end
 
-  def self.create_backup(path, hash_files)
+  def self.create_backup(path, hash_files, key = nil)
     FileUtils.mkdir_p(path) unless Dir.exists?(path)
 
     Backup::create_backup_index(path, hash_files)
 
-    hash_files.each_key {|file| Backup::copy_file_to_backup(path, file)}
+    hash_files.each_key {|file| Backup::copy_file_to_backup(path, file, key)}
   end
 
-  def self.copy_file_to_backup(path, file)
+  def self.copy_file_to_backup(path, file, key = nil)
     unless Dir.exists?(file)
       File.open("#{path}/#{Digest::MD5.hexdigest(file)}", "w") do |f|
-        f.puts open(file).read
+        data = open(file).read
+        data = Backup::encrypt_data(key, data) unless key.nil?
+
+        f.puts data
       end
     end
   end
@@ -94,7 +97,9 @@ module Backup
   end
 
   def self.fetch_jars(path)
-    Dir["#{path}/*"].map {|backup| backup.match(/[0-9a-z]{32}$/)[0]}.compact.sort
+    Dir["#{path}/*"].map do |backup|
+      backup.match(/[0-9a-z]{32}$/)[0] if backup.match(/[0-9a-z]{32}$/)
+    end.compact.sort
   end
 
   def self.semantic_path(path)
@@ -103,5 +108,32 @@ module Backup
     else
       path
     end
+  end
+
+  def self.parse_version_to_time(version, last = false)
+    puts_fail "Invalid date format: #{version}" if version.length < 6
+
+    year, month, day, hour, min, sec = version.split(/([0-9]{2})/).map do |date|
+      date.to_i unless date.empty?
+    end.compact
+
+    hour = 23 if last and hour.nil?
+    min = 59 if last and min.nil?
+    sec = 59 if last and sec.nil?
+
+    time = Time.new(year + 2000, month, day, hour, min, sec, 0)
+  end
+
+  def self.aes(command, key, data)
+    (aes = OpenSSL::Cipher::Cipher.new('aes-256-cbc').send(command)).key = key
+    aes.update(data) << aes.final
+  end
+
+  def self.encrypt_data(key, data)
+    Backup::aes(:encrypt, key, data) unless data.empty?
+  end
+
+  def self.decrypt_data(key, data)
+    Backup::aes(:decrypt, key, data)
   end
 end
