@@ -153,7 +153,7 @@ if opts.add?
           previous_file = previous_index[file].dup
           previous_file.delete(:timestamp)
 
-          if current_file == previous_file
+          if (current_file == previous_file) or (current_file[:checksum] == previous_file[:checksum])
             @files[file][:timestamp] = previous_index[file][:timestamp]
           else
             new_files << file
@@ -169,9 +169,9 @@ if opts.add?
         diff_path = current_path
       end
 
-      unless new_files.empty?
+      unless @files == previous_index
         Backup::create_backup_index(diff_path, @files)
-        Backup::create_backup_files(diff_path, new_files, @key)
+        Backup::create_backup_files(diff_path, new_files, @key) unless new_files.empty?
       else
         puts "Nothing to backup: #{Backup::semantic_path(path)}"
       end
