@@ -121,7 +121,10 @@ if opts.rescue?
   jars = paths.map do |path|
     path = File.expand_path path
     jar_path = "#{@root_path}/#{Digest::MD5.hexdigest(path)}"
-    puts_fail "Jar \"#{path}\" not exists." if Backup::fetch_versions_of_backup(jar_path).empty?
+
+    if Backup::fetch_versions_of_backup(jar_path).empty?
+      puts_fail "Jar \"#{path}\" not exists." 
+    end
 
     jar_path
   end
@@ -144,10 +147,12 @@ if opts.rescue?
     versions = Backup::fetch_versions_of_backup jar_path
 
     #FIXME: Clean code!!!1
-    last_version = Backup::last_version_from_list(versions, @end_date, @start_date)
+    last_version = Backup::last_version_from_list(versions, @end_date,
+                                                  @start_date)
 
     unless last_version.nil?
-      last_diff_version = Backup::last_diff_version(jar_path, last_version, @start_date, @end_date)
+      last_diff_version = Backup::last_diff_version(jar_path, last_version,
+                                                    @start_date, @end_date)
 
       if last_diff_version.nil?
         @indexes << "#{jar_path}/#{last_version}"
@@ -155,24 +160,20 @@ if opts.rescue?
         @indexes << "#{jar_path}/#{last_version}/diff/#{last_diff_version}"
       end
     else
-      versions.reverse.each do |version|
-        last_diff_version = Backup::last_diff_version(jar_path, version, @start_date, @end_date)
-
-        unless last_diff_version.nil?
-          @last_diff_version = "#{jar_path}/#{version}/diff/#{last_diff_version}"
-
-          break
+      last_present = versions.reverse.any? do |version|
+        if last_diff_version = Backup::last_diff_version(jar_path, version,
+                                                         @start_date, @end_date)
+          @indexes << "#{jar_path}/#{version}/diff/#{last_diff_version}"
         end
       end
 
-      if @last_diff_version.nil?
+      unless last_present
+        #TODO: Add path to message than showing which params is bad
         unless @end_date == @start_date
-          puts_fail "Nothing found for date range: #{@start_date} % #{@end_date}"
+          puts_fail "Nothing found in date range: #{@start_date} % #{@end_date}"
         else
-          puts_fail "Nothing found for date: #{@start_date}"
+          puts_fail "Nothing found in date: #{@start_date}"
         end
-      else
-        @indexes << @last_diff_version
       end
     end
   end
@@ -208,7 +209,9 @@ if opts.add?
         puts_fail "Nothing to backup"
       end
     else
-      puts_fail "Before create incremental backup, you need to create a full backup." if Backup::last_backup_path(@jar_path).nil?
+      if Backup::last_backup_path(@jar_path).nil?
+        puts_fail "Before create incremental backup, you need to create a full backup."
+      end
 
       current_path = "#{@jar_path}/#{Backup::last_backup_path(@jar_path)}"
 
@@ -229,7 +232,8 @@ if opts.add?
           previous_file = previous_index[file].dup
           previous_file.delete(:timestamp)
 
-          if (current_file == previous_file) or (current_file[:checksum] == previous_file[:checksum])
+          if (current_file == previous_file) or (current_file[:checksum] ==
+                                                 previous_file[:checksum])
             @files[file][:timestamp] = previous_index[file][:timestamp]
           else
             new_files << file

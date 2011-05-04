@@ -24,7 +24,11 @@ module Backup
 
     if Dir.exists? path
       matches = Dir.glob(File.join(path, "/**/*"), File::FNM_DOTMATCH)
-      matches = matches.map {|match| match unless match =~ /\/..$/ or match =~ /\/.$/ }.compact
+
+      matches = matches.map do |match|
+        match unless match =~ /\/..$/ or match =~ /\/.$/
+      end.compact
+
       matches << path
 
       matches.each do |match|
@@ -68,14 +72,22 @@ module Backup
               file_path = root_path
             else
               diffs = Backup::backup_diff_versions(root_path)
-              file_path = diffs.select {|diff| diff == files[file][:timestamp]}.first
+
+              file_path = diffs.select do |diff|
+                diff == files[file][:timestamp]
+              end.first
+
               file_path = File.expand_path("../#{file_path}", index)
 
-              puts_fail "Invalid timestamp in backup index" if file_path.nil?
+              if file_path.nil?
+                puts_fail "Invalid timestamp in backup index"
+              end
             end
           end
 
-          f.puts open(File.join(file_path, Digest::MD5.hexdigest(file))).read
+          puts file
+          f.puts open(File.join(file_path,
+                                Digest::MD5.hexdigest(file))).read
         end
       end
     end
@@ -98,7 +110,8 @@ module Backup
 
     Backup::create_backup_index(path, hash_files)
 
-    hash_files.each_key {|file| Backup::copy_file_to_backup(path, file, key)}
+    hash_files.each_key {|file| Backup::copy_file_to_backup(path,
+                                                            file, key)}
   end
 
   def self.copy_file_to_backup(path, file, key = nil)
@@ -157,9 +170,10 @@ module Backup
   def self.parse_version_to_time(version, last = false)
     puts_fail "Invalid date format: #{version}" if version.length < 6
 
-    year, month, day, hour, min, sec = version.split(/([0-9]{2})/).map do |date|
-      date.to_i unless date.empty?
-    end.compact
+    year, month, day, hour, min, sec =
+      version.split(/([0-9]{2})/).map do |date|
+        date.to_i unless date.empty?
+      end.compact
 
     if last
       hour = 23 if hour.nil?
@@ -171,7 +185,8 @@ module Backup
   end
 
   def self.aes(command, key, data)
-    (aes = OpenSSL::Cipher::Cipher.new('aes-256-cbc').send(command)).key = key
+    aes = OpenSSL::Cipher::Cipher.new('aes-256-cbc').send(command)
+    aes.key = key
     aes.update(data) << aes.final
   end
 
