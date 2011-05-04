@@ -37,6 +37,50 @@ module Backup
     files
   end
 
+  def self.restore_backup_to(path, index)
+    #FIXME: Restore rights
+    #TODO: Returns the number of files processed.
+    #TODO: Push files to share directory without split
+    files = Backup::fetch_backup_index(index)
+    root_path = File.expand_path("../../", index)
+
+    files.keys.sort.each do |file|
+      restore_file = File.join(path, file)
+
+      if files[file][:checksum].nil?
+        FileUtils::mkdir_p restore_file
+        #FIXME: Check for ok
+        # File.chmod files[file][:mode], restore_file
+        # File.chown files[file][:uid], files[file][:gid], restore_file
+      else
+        FileUtils::mkdir_p(File.dirname restore_file)
+        File.open(restore_file, "w") do |f|
+          #FIXME: Check for ok
+          # f.chmod files[file][:mode]
+          # f.chown files[file][:uid], files[file][:gid]
+
+          #FIXME: Use timestamp in path
+          if files[file][:timestamp] == index.match(/[0-9]{12}$/)[0]
+            file_path = index
+          else
+            #TODO: check for diff and index to paths
+            if index.match /#{files[file][:timestamp]}/
+              file_path = root_path
+            else
+              diffs = Backup::backup_diff_versions(root_path)
+              file_path = diffs.select {|diff| diff == files[file][:timestamp]}.first
+              file_path = File.expand_path("../#{file_path}", index)
+
+              puts_fail "Invalid timestamp in backup index" if file_path.nil?
+            end
+          end
+
+          f.puts open(File.join(file_path, Digest::MD5.hexdigest(file))).read
+        end
+      end
+    end
+  end
+
   def self.create_backup_index(path, hash_files)
     FileUtils.mkdir_p(path) unless Dir.exists?(path)
 
@@ -117,9 +161,11 @@ module Backup
       date.to_i unless date.empty?
     end.compact
 
-    hour = 23 if last and hour.nil?
-    min = 59 if last and min.nil?
-    sec = 59 if last and sec.nil?
+    if last
+      hour = 23 if hour.nil?
+      min = 59 if min.nil?
+      sec = 59 if sec.nil?
+    end
 
     time = Time.new(year + 2000, month, day, hour, min, sec, 0)
   end
@@ -139,5 +185,22 @@ module Backup
 
   def self.jar_path(root_path, jar)
     "#{root_path}/#{Digest::MD5.hexdigest(jar)}"
+  end
+
+  def self.last_version_from_list(list, end_date, start_date = nil)
+    list.reverse.select do |version|
+      version = Backup::parse_version_to_time version
+
+      unless start_date.nil?
+        version >= start_date and version <= end_date
+      else
+        version <= end_date
+      end
+    end.first
+  end
+
+  def self.last_diff_version(jar_path, version, start_date, end_date)
+    diff_versions = Backup::backup_diff_versions("#{jar_path}/#{version}")
+    Backup::last_version_from_list(diff_versions, end_date, start_date)
   end
 end

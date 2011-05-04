@@ -27,15 +27,16 @@ require './lib/backup.rb'
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
   on :c, :config, "Use config file to upload backup", true
-  on :d, :date, "Date for return to back up", true
+  on :d, :date, "Date for backup restore (default: last)", true
   on :f, :find, "Find file or directory in backups"
   on :g, :generate, "Generate key", true
+  on :h, :hostname, "Set hostname (default: system)", true
   on :i, :increment, "Use increment mode for backup (default: false)"
   on :j, :jar, "Versions of jar (option: hash or path)", true
   on :k, :key, "Key to encrypt/decrypt backup", true
   on :l, :list, "List of jars"
-  on :r, :rescue, "What rescue from backup (default: all)", true
-  on :t, :to, "Recovery to path (default: absolute path)"
+  on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
+  on :t, :to, "Path to recovery (default: /)", true
   on :v, :verbose, "Verbose mode"
 
   banner "Usage:\n    $ parabola [options]\n\nOptions:"
@@ -46,8 +47,13 @@ if ARGV.empty?
   exit
 end
 
+if opts.hostname?
+  @hostname = opts[:hostname]
+else
+  @hostname = Socket.gethostname
+end
+
 @timestamp = Time.now.utc.strftime "%y%m%d%H%M%S"
-@hostname = Socket.gethostname
 @root_path = "backup/#{@hostname}"
 
 if opts.list?
@@ -76,19 +82,20 @@ if opts.date?
   date = opts[:date].gsub(".", "").gsub(" ", "").gsub(":", "").split("-")
 
   unless date.length == 1
-    start_date = Backup::parse_version_to_time date[0]
-    end_date = Backup::parse_version_to_time date[1], true
+    @start_date = Backup::parse_version_to_time date[0]
+    @end_date = Backup::parse_version_to_time date[1], true
 
     puts_fail "Last date less than start date" if start_date > end_date
-    puts start_date, end_date
   else
-    puts Backup::parse_version_to_time date[0]
+    @start_date = Backup::parse_version_to_time date[0]
+    @end_date = Backup::parse_version_to_time date[0], true
   end
-
-  exit
+else
+  @end_date = Time.now.utc
 end
 
 if opts.jar?
+  #FIXME: Support hash as path too
   jar_path = Backup::jar_path(@root_path, File.expand_path(opts[:jar]))
 
   versions = Backup::fetch_versions_of_backup jar_path
@@ -109,12 +116,81 @@ if opts.jar?
   exit
 end
 
+if opts.rescue?
+  paths = opts[:rescue].split(" ")
+  jars = paths.map do |path|
+    path = File.expand_path path
+    jar_path = "#{@root_path}/#{Digest::MD5.hexdigest(path)}"
+    puts_fail "Jar \"#{path}\" not exists." if Backup::fetch_versions_of_backup(jar_path).empty?
+
+    jar_path
+  end
+
+  if opts.to?
+    @to = File.expand_path opts[:to]
+    FileUtils.mkdir_p @to
+  else
+    @to = "/"
+  end
+
+  #TODO: Confirm flag
+  #TODO: Filters for date: < now, or 12.12.03 >
+  #TODO: fetch last diff index or root index. And add files to array that fetch these after
+  #TODO: Empty destination directory
+
+  @indexes = []
+
+  jars.each do |jar_path|
+    versions = Backup::fetch_versions_of_backup jar_path
+
+    #FIXME: Clean code!!!1
+    last_version = Backup::last_version_from_list(versions, @end_date, @start_date)
+
+    unless last_version.nil?
+      last_diff_version = Backup::last_diff_version(jar_path, last_version, @start_date, @end_date)
+
+      if last_diff_version.nil?
+        @indexes << "#{jar_path}/#{last_version}"
+      else
+        @indexes << "#{jar_path}/#{last_version}/diff/#{last_diff_version}"
+      end
+    else
+      versions.reverse.each do |version|
+        last_diff_version = Backup::last_diff_version(jar_path, version, @start_date, @end_date)
+
+        unless last_diff_version.nil?
+          @last_diff_version = "#{jar_path}/#{version}/diff/#{last_diff_version}"
+
+          break
+        end
+      end
+
+      if @last_diff_version.nil?
+        unless @end_date == @start_date
+          puts_fail "Nothing found for date range: #{@start_date} % #{@end_date}"
+        else
+          puts_fail "Nothing found for date: #{@start_date}"
+        end
+      else
+        @indexes << @last_diff_version
+      end
+    end
+  end
+
+  @indexes.each do |index|
+    Backup::restore_backup_to(@to, index)
+  end
+
+  exit
+end
+
 if opts.add?
   paths = opts[:add].split(" ")
 
   paths = paths.map do |path|
     path = File.expand_path path
     puts_fail "Path \"#{path}\" not exists." unless File.exists? path
+
     path
   end
 
@@ -159,6 +235,7 @@ if opts.add?
             new_files << file
           end
         else
+          #TODO: If file has renamed, find it and change path, without upload
           new_files << file
         end
       end
