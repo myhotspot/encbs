@@ -2,7 +2,6 @@
 require 'rubygems'
 require 'yaml'
 require 'digest'
-require 'socket'
 require 'fileutils'
 require 'openssl'
 
@@ -50,11 +49,9 @@ end
 
 if opts.hostname?
   @hostname = opts[:hostname]
-else
-  @hostname = Socket.gethostname
 end
 
-@timestamp = Time.now.utc.strftime "%y%m%d%H%M%S"
+@timestamp = Backup::Timestamp.create
 #FIXME: Add cloud and config paths
 @root_path = "backup/#{@hostname}"
 
@@ -81,7 +78,7 @@ if opts.generate?
 end
 
 if opts.date?
-  date = opts[:date].gsub(".", "").gsub(" ", "").gsub(":", "").split("-")
+  date = opts[:date].split("-")
 
   unless date.length == 1
     @start_date = Backup::Timestamp.parse_timestamp date[0]

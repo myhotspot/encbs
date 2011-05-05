@@ -1,7 +1,18 @@
-require './backup/file'
-require './backup/timestamp'
+require 'socket'
+
+require 'backup/file'
+require 'backup/timestamp'
 
 module Backup
+  class Instance
+    attr_reader :root_path, :hostname
+
+    def initialize(root_path, hostname = nil, cloud = nil)
+      @root_path = root_path
+      @hostname = hostname || Socket.gethostname
+    end
+  end
+
   def self.create_hash_for_path(path, timestamp)
     files = {}
 
