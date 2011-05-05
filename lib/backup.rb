@@ -1,6 +1,6 @@
 require 'socket'
 
-require 'backup/file'
+require 'backup/file_item'
 require 'backup/timestamp'
 
 module Backup
@@ -10,6 +10,20 @@ module Backup
     def initialize(root_path, hostname = nil, cloud = nil)
       @root_path = root_path
       @hostname = hostname || Socket.gethostname
+    end
+
+    def key=(path)
+      @key = open(path).read
+    end
+
+    def jars
+      @jars ||= Dir["#{@root_path}/*"].map do |backup|
+        backup.match(/[0-9a-z]{32}$/)[0] if backup.match(/[0-9a-z]{32}$/)
+      end.compact.sort
+    end
+
+    def jar_path(jar)
+      "#{@root_path}/#{Digest::MD5.hexdigest(jar)}"
     end
   end
 
@@ -26,10 +40,10 @@ module Backup
       matches << path
 
       matches.each do |match|
-        files.merge!(Backup::File.stat(match, timestamp))
+        files.merge!(Backup::FileItem.stat(match, timestamp))
       end
     else
-      files = Backup::File.stat(path, timestamp)
+      files = Backup::FileItem.stat(path, timestamp)
     end
 
     files
@@ -153,13 +167,7 @@ module Backup
   def self.create_jar(jar_path, path)
     FileUtils.mkdir_p(jar_path) unless Dir.exists?(jar_path)
 
-    File.open("#{jar_path}/jar", "w").puts Backup::File.semantic_path(path)
-  end
-
-  def self.fetch_jars(path)
-    Dir["#{path}/*"].map do |backup|
-      backup.match(/[0-9a-z]{32}$/)[0] if backup.match(/[0-9a-z]{32}$/)
-    end.compact.sort
+    File.open("#{jar_path}/jar", "w").puts Backup::FileItem.semantic_path(path)
   end
 
   def self.aes(command, key, data)
@@ -174,10 +182,6 @@ module Backup
 
   def self.decrypt_data(key, data)
     Backup::aes(:decrypt, key, data)
-  end
-
-  def self.jar_path(root_path, jar)
-    "#{root_path}/#{Digest::MD5.hexdigest(jar)}"
   end
 
   def self.last_diff_version(jar_path, version, start_date, end_date)

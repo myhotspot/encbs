@@ -21,13 +21,14 @@ rescue Exception => e
   }
 end
 
-require './lib/backup.rb'
+$LOAD_PATH << File.dirname(__FILE__) + '/lib/'
+require 'backup'
 
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
-  on :c, :config, "Use config file to upload backup", true
+  on :c, :config, "Use config file to upload backup", true #TODO
   on :d, :date, "Date for backup restore (default: last)", true
-  on :f, :find, "Find file or directory in backups"
+  on :f, :find, "Find file or directory in backups" #TODO
   on :g, :generate, "Generate key", true
   on :h, :hostname, "Set hostname (default: system)", true
   on :i, :increment, "Use increment mode for backup (default: false)"
@@ -36,7 +37,7 @@ opts = Slop.parse :help => true do
   on :l, :list, "List of jars"
   on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
   on :t, :to, "Path to recovery (default: /)", true
-  on :v, :verbose, "Verbose mode"
+  on :v, :verbose, "Verbose mode" #TODO
 
   banner "Usage:\n    $ parabola [options]\n\nOptions:"
 end
@@ -47,27 +48,16 @@ if ARGV.empty?
   exit
 end
 
+#FIXME: REMOVE!!
+require 'socket'
 if opts.hostname?
   @hostname = opts[:hostname]
+else
+  @hostname = Socket.gethostname
 end
 
-@timestamp = Backup::Timestamp.create
 #FIXME: Add cloud and config paths
-@root_path = "backup/#{@hostname}"
-
-if opts.list?
-  puts "List of jars:\n"
-
-  Backup::fetch_jars(@root_path).each do |jar|
-    puts "    #{jar}: #{open("#{@root_path}/#{jar}/jar").readlines[0].chomp}"
-  end
-
-  exit
-end
-
-if opts.key?
-  @key = open(opts[:key]).read
-end
+@root_path = "backup/#{@hostname}" #TODO: REMOVE!!
 
 if opts.generate?
   File.open(opts[:generate], "w") do |f|
@@ -76,6 +66,21 @@ if opts.generate?
 
   exit
 end
+
+@backup = Backup::Instance.new @root_path
+
+if opts.list?
+  puts "List of jars:\n"
+
+  @backup.jars.each do |jar|
+    puts "    #{jar}: #{open("#{@root_path}/#{jar}/jar").readlines[0].chomp}"
+  end
+
+  exit
+end
+
+#TODO: AES or RSA
+@backup.key = opts[:key] if opts.key?
 
 if opts.date?
   date = opts[:date].split("-")
@@ -95,7 +100,8 @@ end
 
 if opts.jar?
   #FIXME: Support hash as path too
-  jar_path = Backup::jar_path(@root_path, File.expand_path(opts[:jar]))
+  #TODO: DSL for that
+  jar_path = @backup.jar_path(File.expand_path(opts[:jar]))
 
   versions = Backup::fetch_versions_of_backup jar_path
 
@@ -255,7 +261,7 @@ if opts.add?
         Backup::create_backup_index(diff_path, @files)
         Backup::create_backup_files(diff_path, new_files, @key) unless new_files.empty?
       else
-        puts "Nothing to backup: #{Backup::File.semantic_path(path)}"
+        puts "Nothing to backup: #{Backup::FileItem.semantic_path(path)}"
       end
     end
   end

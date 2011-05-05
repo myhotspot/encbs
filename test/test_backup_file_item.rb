@@ -1,14 +1,14 @@
-require File.expand_path('../test_helper', __FILE__)
+require File.expand_path('../helper', __FILE__)
 
-class BackupFileTest < Test::Unit::TestCase
+class BackupFileItemTest < Test::Unit::TestCase
   def test_semantic_path
-    assert_equal __FILE__, Backup::File.semantic_path(__FILE__)
+    assert_equal __FILE__, Backup::FileItem.semantic_path(__FILE__)
     assert_equal File.dirname(__FILE__) + '/',
-                 Backup::File.semantic_path(File.dirname(__FILE__))
+                 Backup::FileItem.semantic_path(File.dirname(__FILE__))
   end
 
   def test_file_stat
-    file = Backup::File.stat(__FILE__, Backup::Timestamp.create)
+    file = Backup::FileItem.stat(__FILE__, Backup::Timestamp.create)
     key = file.keys.first
 
     assert_not_nil file[key][:uid]
@@ -19,7 +19,7 @@ class BackupFileTest < Test::Unit::TestCase
   end
 
   def test_directory_stat
-    file = Backup::File.stat(File.dirname(__FILE__), Backup::Timestamp.create)
+    file = Backup::FileItem.stat(File.dirname(__FILE__), Backup::Timestamp.create)
     key = file.keys.first
 
     assert_not_nil file[key][:uid]
