@@ -44,6 +44,7 @@ end
 
 if ARGV.empty?
   puts opts.help
+
   exit
 end
 
@@ -54,6 +55,7 @@ else
 end
 
 @timestamp = Time.now.utc.strftime "%y%m%d%H%M%S"
+#FIXME: Add cloud and config paths
 @root_path = "backup/#{@hostname}"
 
 if opts.list?
@@ -82,13 +84,13 @@ if opts.date?
   date = opts[:date].gsub(".", "").gsub(" ", "").gsub(":", "").split("-")
 
   unless date.length == 1
-    @start_date = Backup::parse_version_to_time date[0]
-    @end_date = Backup::parse_version_to_time date[1], true
+    @start_date = Backup::Timestamp.parse_timestamp date[0]
+    @end_date = Backup::Timestamp.parse_timestamp date[1], true
 
     puts_fail "Last date less than start date" if start_date > end_date
   else
-    @start_date = Backup::parse_version_to_time date[0]
-    @end_date = Backup::parse_version_to_time date[0], true
+    @start_date = Backup::Timestamp.parse_timestamp date[0]
+    @end_date = Backup::Timestamp.parse_timestamp date[0], true
   end
 else
   @end_date = Time.now.utc
@@ -103,10 +105,10 @@ if opts.jar?
   unless versions.empty?
     puts "Versions of backup: #{opts[:jar]}"
     versions.each do |version|
-      puts "    #{Backup::parse_version_to_time version}"
+      puts "    #{Backup::Timestamp.parse_timestamp version}"
 
       Backup::backup_diff_versions("#{jar_path}/#{version}").each do |diff|
-        puts "      diff: #{Backup::parse_version_to_time diff}"
+        puts "      diff: #{Backup::Timestamp.parse_timestamp diff}"
       end
     end
   else
@@ -147,8 +149,8 @@ if opts.rescue?
     versions = Backup::fetch_versions_of_backup jar_path
 
     #FIXME: Clean code!!!1
-    last_version = Backup::last_version_from_list(versions, @end_date,
-                                                  @start_date)
+    last_version = Backup::Timestamp.last_version_from_list(versions,
+                                                            @end_date, @start_date)
 
     unless last_version.nil?
       last_diff_version = Backup::last_diff_version(jar_path, last_version,
@@ -160,14 +162,16 @@ if opts.rescue?
         @indexes << "#{jar_path}/#{last_version}/diff/#{last_diff_version}"
       end
     else
-      last_present = versions.reverse.any? do |version|
+      last_diff_version = versions.reverse.find do |version|
         if last_diff_version = Backup::last_diff_version(jar_path, version,
                                                          @start_date, @end_date)
-          @indexes << "#{jar_path}/#{version}/diff/#{last_diff_version}"
+          "#{jar_path}/#{version}/diff/#{last_diff_version}"
         end
       end
 
-      unless last_present
+      if last_diff_version
+        @indexes << last_diff_version
+      else
         #TODO: Add path to message than showing which params is bad
         unless @end_date == @start_date
           puts_fail "Nothing found in date range: #{@start_date} % #{@end_date}"
@@ -254,7 +258,7 @@ if opts.add?
         Backup::create_backup_index(diff_path, @files)
         Backup::create_backup_files(diff_path, new_files, @key) unless new_files.empty?
       else
-        puts "Nothing to backup: #{Backup::semantic_path(path)}"
+        puts "Nothing to backup: #{Backup::File.semantic_path(path)}"
       end
     end
   end
