@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-$LOAD_PATH.unshift(File.dirname(__FILE__) + '/palobr/')
+$LOAD_PATH.unshift(File.expand_path("../../lib/", __FILE__))
 
 require 'rubygems'
 require 'yaml'
@@ -32,7 +32,7 @@ opts = Slop.parse :help => true do
   on :t, :to, "Path to recovery (default: /)", true
   on :v, :verbose, "Verbose mode" #TODO
 
-  banner "Usage:\n    $ parabola [options]\n\nOptions:"
+  banner "Usage:\n    $ palobr [options]\n\nOptions:"
 end
 
 if ARGV.empty?
