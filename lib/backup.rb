@@ -41,12 +41,7 @@ module Backup
     end
 
     def restore_jar_to(hash, timestamp, to)
-      #FIXME: Restore rights
       files = Jar.fetch_index_for(root_path, hash, timestamp)
-
-      i=0
-      puts files.select {|file| (i+=1) < 10}
-      # return
 
       files.keys.sort.each do |file|
         restore_file = File.join(to, file)
@@ -64,21 +59,28 @@ module Backup
           check_rights(restore_file, file_ok[:uid], file_ok[:gid],
           						 current_file[:uid], current_file[:gid])
         else
-          # FileUtils::mkdir_p(File.dirname restore_file)
+          try_create_dir(File.dirname restore_file)
 
-          #FIXME: Check for exists
-          # File.open(restore_file, "w") do |f|
-            # begin
-              # f.chmod files[file][:mode]
-              # f.chown files[file][:uid], files[file][:gid]
-            # rescue Exception => e
-              # puts_fail e
-            # end
+          begin
+            File.open(restore_file, "w") do |f|
+              f.chmod current_file[:mode]
+              f.chown current_file[:uid], current_file[:gid]
 
-            # puts file
-            # f.puts open(File.join(file_path,
-                                  # Digest::MD5.hexdigest(file))).read
-          # end
+              remote_path = "#{@root_path}/#{hash}/#{current_file[:timestamp]}"
+              remote_path += "/#{FileItem.file_hash file}"
+
+              data = FileItem.read_file remote_path
+              f.puts data
+            end
+
+            file_ok = FileItem.stat(restore_file)[restore_file]
+          
+            check_mode(restore_file, file_ok[:mode], current_file[:mode])
+            check_rights(restore_file, file_ok[:uid], file_ok[:gid],
+                         current_file[:uid], current_file[:gid])
+          rescue Errno::EACCES
+            puts_fail "Permission denied for #{restore_file.dark_green}"
+          end
         end
       end
 

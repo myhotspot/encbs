@@ -150,7 +150,7 @@ if opts.rescue?
 
   jars_hashes.each do |hash|
     versions = @backup.jar_versions(hash)
-    puts "Versions: #{versions}"
+    puts "Versions: #{versions}" #FIXME
 
     last_version = Backup::Timestamp.last_from(versions, @end_date, @start_date)
 
@@ -170,9 +170,8 @@ if opts.rescue?
   end
 
   @index.each do |hash, timestamp|
-    puts "#{hash}: #{timestamp}"
+    puts "#{hash}: #{timestamp}" #FIXME
     @backup.restore_jar_to(hash, timestamp, @to)
-    # Backup::restore_backup_to(@to, index)
   end
 
   exit

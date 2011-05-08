@@ -21,7 +21,7 @@ def try_create_dir(dir)
   begin
     FileUtils.mkdir_p dir unless Dir.exists? dir
   rescue Errno::EACCES
-    puts_fail "Permission denied for #{dir}"
+    puts_fail "Permission denied for #{dir.dark_green}"
   end
 end
 
