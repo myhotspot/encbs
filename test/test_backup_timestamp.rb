@@ -28,29 +28,29 @@ class BackupTimestampTest < Test::Unit::TestCase
     assert_raise(RuntimeError) { Backup::Timestamp.parse_timestamp("11d10.,130") }
   end
 
-  def test_last_timestamp_from_list
+  def test_last_from
     timestamps = ["110130090812", "110130103412", "110106121234"]
 
     assert_equal("110130103412",
-                 Backup::Timestamp.last_timestamp_from_list(timestamps,
+                 Backup::Timestamp.last_from(timestamps,
                                 Backup::Timestamp.parse_timestamp("110130", true)))
     assert_equal("110130090812",
-                 Backup::Timestamp.last_timestamp_from_list(timestamps,
+                 Backup::Timestamp.last_from(timestamps,
                                 Backup::Timestamp.parse_timestamp("11013009", true)))
     assert_equal("110106121234",
-                 Backup::Timestamp.last_timestamp_from_list(timestamps,
+                 Backup::Timestamp.last_from(timestamps,
                                 Backup::Timestamp.parse_timestamp("110106", true)))
 
     assert_equal("110130103412",
-                 Backup::Timestamp.last_timestamp_from_list(timestamps,
+                 Backup::Timestamp.last_from(timestamps,
                                 Backup::Timestamp.parse_timestamp("110130", true),
                                 Backup::Timestamp.parse_timestamp("110130")))
     assert_equal("110106121234",
-                 Backup::Timestamp.last_timestamp_from_list(timestamps,
+                 Backup::Timestamp.last_from(timestamps,
                                 Backup::Timestamp.parse_timestamp("110110", true),
                                 Backup::Timestamp.parse_timestamp("110101")))
     assert_equal("110130090812",
-                 Backup::Timestamp.last_timestamp_from_list(timestamps,
+                 Backup::Timestamp.last_from(timestamps,
                                 Backup::Timestamp.parse_timestamp("1101300908", true),
                                 Backup::Timestamp.parse_timestamp("110130090811")))
 

@@ -19,6 +19,7 @@ require 'crypto'
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
   on :c, :config, "Use config file to upload backup", true #TODO
+  on :colorize, "Colorize print to console."
   on :d, :date, "Date for backup restore (default: last)", true
   on :f, :find, "Find file or directory in backups" #TODO
   on :g, :generate, "Generate 4096 bits RSA keys"
@@ -42,6 +43,7 @@ end
 
 # $VERBOSE = opts.verbose?
 $VERBOSE = true
+$COLORIZE = true
 
 #FIXME: REMOVE!!
 require 'socket'
@@ -96,6 +98,7 @@ if opts.date?
     @end_date = Backup::Timestamp.parse_timestamp date[0], true
   end
 else
+  @start_date = nil
   @end_date = Time.now.utc
 end
 
@@ -115,22 +118,26 @@ if opts.jar?
   exit
 end
 
+#TODO: Support rescue option as hash
 if opts.rescue?
   paths = opts[:rescue].split(" ")
-  jars = paths.map do |path|
-    path = File.expand_path path
-    jar_path = "#{@root_path}/#{Digest::MD5.hexdigest(path)}"
+  jars_list = @backup.jars
 
-    if Backup::fetch_versions_of_backup(jar_path).empty?
+  include_path = lambda {|path| jars_list.keys.include? path}
+  
+  jars_hashes = paths.map do |path|
+    path = File.expand_path path
+
+    unless include_path[path] or include_path["#{path}/"]
       puts_fail "Jar \"#{path}\" not exists." 
     end
 
-    jar_path
+    jars_list[path] || jars_list["#{path}/"]
   end
 
   if opts.to?
     @to = File.expand_path opts[:to]
-    FileUtils.mkdir_p @to
+    try_create_dir @to
   else
     @to = "/"
   end
@@ -139,47 +146,33 @@ if opts.rescue?
   #TODO: fetch last diff index or root index. And add files to array that fetch these after
   #TODO: Empty destination directory
 
-  @indexes = []
+  @index = {}
 
-  jars.each do |jar_path|
-    versions = Backup::fetch_versions_of_backup jar_path
+  jars_hashes.each do |hash|
+    versions = @backup.jar_versions(hash)
+    puts "Versions: #{versions}"
 
-    #FIXME: Clean code!!!1
-    last_version = Backup::Timestamp.last_version_from_list(versions,
-                                                            @end_date, @start_date)
+    last_version = Backup::Timestamp.last_from(versions, @end_date, @start_date)
 
     unless last_version.nil?
-      last_diff_version = Backup::last_diff_version(jar_path, last_version,
-                                                    @start_date, @end_date)
-
-      if last_diff_version.nil?
-        @indexes << "#{jar_path}/#{last_version}"
-      else
-        @indexes << "#{jar_path}/#{last_version}/diff/#{last_diff_version}"
-      end
+      @index[hash] = last_version
     else
-      last_diff_version = versions.reverse.find do |version|
-        if last_diff_version = Backup::last_diff_version(jar_path, version,
-                                                         @start_date, @end_date)
-          "#{jar_path}/#{version}/diff/#{last_diff_version}"
-        end
-      end
+      error_path = "#{Backup::Jar.hash_to_path(@backup.root_path, hash)}"
+      start_date = Backup::Timestamp.to_s(@start_date)
+      end_date = Backup::Timestamp.to_s(@end_date)
 
-      if last_diff_version
-        @indexes << last_diff_version
+      unless @end_date == @start_date
+        puts_fail "Nothing found for #{error_path}, between date: #{start_date} - #{end_date}"
       else
-        #TODO: Add path to message than showing which params is bad
-        unless @end_date == @start_date
-          puts_fail "Nothing found in date range: #{@start_date} % #{@end_date}"
-        else
-          puts_fail "Nothing found in date: #{@start_date}"
-        end
+        puts_fail "Nothing found for #{error_path}, for date: #{end_date}"
       end
     end
   end
 
-  @indexes.each do |index|
-    Backup::restore_backup_to(@to, index)
+  @index.each do |hash, timestamp|
+    puts "#{hash}: #{timestamp}"
+    @backup.restore_jar_to(hash, timestamp, @to)
+    # Backup::restore_backup_to(@to, index)
   end
 
   exit
@@ -196,16 +189,8 @@ if opts.add?
   end
 
   paths.each do |path|
-    # @files = @backup.create_hash_for_path(path)
-    # puts_fail "Nothing to backup" if @files.empty?
-
-    # jar_path = @backup.jar_path path #!!!!!!!!!!!
-    # backup/Timothy-Klims-MacBook-Pro.local/c5068b7c2b1707f8939b283a2758a691
-
     unless opts.increment?
       @backup.create! path
-      # @backup.create_jar(path) #!!!!!!
-      # @backup.create_backup(path, @files) #!!!!!!!!
     else
       if Backup::last_backup_path(@jar_path).nil?
         puts_fail "Before create incremental backup, you need to create a full backup."
