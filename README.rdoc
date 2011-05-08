@@ -1,6 +1,6 @@
 = palobr
 
-Simple backup system for push into the cloud.
+Simple backup system for pushing into cloud.
 
 == Contributing to palobr
  
