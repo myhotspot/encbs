@@ -23,7 +23,7 @@ require 'crypto'
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
   on :c, :config, "Use config file to upload backup", true #TODO
-  on :colorize, "Colorize print to console."
+  on :colorize, "Colorize print to console"
   on :d, :date, "Date for backup restore (default: last)", true
   on :f, :find, "Find file or directory in backups" #TODO
   on :g, :generate, "Generate 4096 bits RSA keys"
@@ -31,7 +31,8 @@ opts = Slop.parse :help => true do
   on :i, :increment, "Use increment mode for backup (default: false)"
   on :j, :jar, "Versions of jar (option: hash or path)", true
   on :k, :key, "Key to encrypt/decrypt backup", true
-  on :l, :list, "List of jars"
+  on :list, "List of jars"
+  on :l, :local, "Backup in local directory", true
   on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
   on :t, :to, "Path to recovery (default: /)", true
   on :v, :verbose, "Verbose mode" #TODO
@@ -58,9 +59,12 @@ if opts.generate?
   exit
 end
 
-#FIXME
-try_create_dir "/tmp/backup"
-@backup = Backup::Instance.new "/tmp/backup"
+if opts.local?
+  try_create_dir opts[:local]
+  @backup = Backup::Instance.new opts[:local]
+else
+  puts_fail "Set local path with backup"
+end
 
 if opts.list?
   jars_list = @backup.jars
@@ -68,7 +72,7 @@ if opts.list?
   unless jars_list.empty?
     puts "List of jars:\n"
     jars_list.keys.sort.each do |key|
-      puts "    #{key}: #{jars_list[key]}"
+      puts "    #{key.dark_green}: #{jars_list[key]}"
     end
   else
     puts "Nothing to listing."
