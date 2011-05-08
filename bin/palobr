@@ -186,7 +186,4 @@ if opts.add?
   end
 
   puts "Done!".green
-# TODO
-# else
-#   puts_fail "Before create backup, you must add path." if opts.increment?
 end

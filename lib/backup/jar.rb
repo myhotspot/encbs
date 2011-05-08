@@ -18,11 +18,17 @@ module Backup
         current_files = hash_local_files
 
         last_timestamp = Jar.jar_versions(@root_path, jar_hash, true).last
+
+        if last_timestamp.nil?
+          puts_fail "First you must create a full backup for #{@local_path.dark_green}"
+        end
+
         last_index = Jar.fetch_index_for(@root_path, jar_hash, last_timestamp)
 
         current_files.keys.each do |file|
           @local_files[file] = current_files[file]
 
+          #TODO: Cut to a new method {
           current = current_files[file].dup
           current.delete(:timestamp)
 
@@ -36,6 +42,7 @@ module Backup
               @local_files[file][:timestamp] = last_index[file][:timestamp]
             end
           end
+          # }
         end
       end
 
@@ -119,7 +126,8 @@ module Backup
       end
 
       def fetch_index_for(root_path, hash, timestamp)
-        YAML::load(FileItem.read_file "#{root_path}/meta/#{hash}/#{timestamp}.yml")
+        index = FileItem.read_file "#{root_path}/meta/#{hash}/#{timestamp}.yml"
+        YAML::load(index) unless index.nil?
       end
     end
 
