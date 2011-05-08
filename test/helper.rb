@@ -8,6 +8,7 @@ require 'fileutils'
 require 'openssl'
 
 require 'backup'
+require 'crypto'
 
 def puts_fail msg
   raise msg

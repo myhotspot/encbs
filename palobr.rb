@@ -1,35 +1,27 @@
 #!/usr/bin/env ruby
+$LOAD_PATH << File.dirname(__FILE__) + '/lib/'
+
 require 'rubygems'
 require 'yaml'
 require 'digest'
 require 'fileutils'
 require 'openssl'
+require 'helpers'
 
-def puts_fail(msg)
-  STDERR.puts "Error: #{msg}"
-
-  exit msg.length
-end
-
-begin
+safe_require do
   require 'slop'
   # require 'fog'
-rescue Exception => e
-  puts_fail %Q{This script use these gems: fog, slop.
-    Make sure that you have them all.
-    If you don't have, you may install them: $ gem install fog slop
-  }
 end
 
-$LOAD_PATH << File.dirname(__FILE__) + '/lib/'
 require 'backup'
+require 'crypto'
 
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
   on :c, :config, "Use config file to upload backup", true #TODO
   on :d, :date, "Date for backup restore (default: last)", true
   on :f, :find, "Find file or directory in backups" #TODO
-  on :g, :generate, "Generate key", true
+  on :g, :generate, "Generate 4096 bits RSA keys"
   on :h, :hostname, "Set hostname (default: system)", true
   on :i, :increment, "Use increment mode for backup (default: false)"
   on :j, :jar, "Versions of jar (option: hash or path)", true
@@ -48,6 +40,9 @@ if ARGV.empty?
   exit
 end
 
+# $VERBOSE = opts.verbose?
+$VERBOSE = true
+
 #FIXME: REMOVE!!
 require 'socket'
 if opts.hostname?
@@ -60,9 +55,10 @@ end
 @root_path = "backup/#{@hostname}" #TODO: REMOVE!!
 
 if opts.generate?
-  File.open(opts[:generate], "w") do |f|
-    10.times {f.puts Digest::SHA512.digest "#{rand}#{Time.now}"}
-  end
+  puts "Generate 4096 bits RSA keys"
+  Crypto::create_keys(File.join(Dir.getwd, "rsa_key"),
+  										File.join(Dir.getwd, "rsa_key.pub"))
+  puts "Done!"
 
   exit
 end
@@ -70,10 +66,15 @@ end
 @backup = Backup::Instance.new @root_path
 
 if opts.list?
-  puts "List of jars:\n"
+  jars_list = @backup.jars
 
-  @backup.jars.each do |jar|
-    puts "    #{jar}: #{open("#{@root_path}/#{jar}/jar").readlines[0].chomp}"
+  unless jars_list.empty?
+    puts "List of jars:\n"
+    jars_list.keys.sort.each do |key|
+      puts "    #{key}: #{jars_list[key]}"
+    end
+  else
+    puts "Nothing to listing."
   end
 
   exit
@@ -203,18 +204,16 @@ if opts.add?
   end
 
   paths.each do |path|
-    @files = Backup::create_hash_for_path(path, @timestamp)
-    @jar_path = "#{@root_path}/#{Digest::MD5.hexdigest(path)}"
+    # @files = @backup.create_hash_for_path(path)
+    # puts_fail "Nothing to backup" if @files.empty?
+
+    # jar_path = @backup.jar_path path #!!!!!!!!!!!
+    # backup/Timothy-Klims-MacBook-Pro.local/c5068b7c2b1707f8939b283a2758a691
 
     unless opts.increment?
-      current_path = "#{@jar_path}/#{@timestamp}"
-
-      unless @files.empty?
-        Backup::create_jar(@jar_path, path)
-        Backup::create_backup(current_path, @files, @key)
-      else
-        puts_fail "Nothing to backup"
-      end
+      @backup.create! path
+      # @backup.create_jar(path) #!!!!!!
+      # @backup.create_backup(path, @files) #!!!!!!!!
     else
       if Backup::last_backup_path(@jar_path).nil?
         puts_fail "Before create incremental backup, you need to create a full backup."

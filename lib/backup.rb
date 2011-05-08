@@ -2,51 +2,40 @@ require 'socket'
 
 require 'backup/file_item'
 require 'backup/timestamp'
+require 'backup/jar'
 
 module Backup
   class Instance
-    attr_reader :root_path, :hostname
+    attr_reader :root_path, :hostname, :timestamp
 
     def initialize(root_path, hostname = nil, cloud = nil)
       @root_path = root_path
       @hostname = hostname || Socket.gethostname
+      @timestamp = Backup::Timestamp.create
     end
 
     def key=(path)
       @key = open(path).read
     end
 
+    def create!(local_path)
+      jar = Jar.new(@root_path, local_path)
+      jar.save
+    end
+
     def jars
-      @jars ||= Dir["#{@root_path}/*"].map do |backup|
-        backup.match(/[0-9a-z]{32}$/)[0] if backup.match(/[0-9a-z]{32}$/)
-      end.compact.sort
+      Jar.all(@root_path)
     end
 
-    def jar_path(jar)
-      "#{@root_path}/#{Digest::MD5.hexdigest(jar)}"
-    end
-  end
-
-  def self.create_hash_for_path(path, timestamp)
-    files = {}
-
-    if Dir.exists? path
-      matches = Dir.glob(File.join(path, "/**/*"), File::FNM_DOTMATCH)
-
-      matches = matches.map do |match|
-        match unless match =~ /\/..$/ or match =~ /\/.$/
-      end.compact
-
-      matches << path
-
-      matches.each do |match|
-        files.merge!(Backup::FileItem.stat(match, timestamp))
+    def copy_file_to_backup(path, file)
+      unless Dir.exists?(file)
+        File.open("#{path}/#{Digest::MD5.hexdigest(file)}", "w") do |f|
+          data = open(file).read
+          f.puts data
+        end
       end
-    else
-      files = Backup::FileItem.stat(path, timestamp)
     end
 
-    files
   end
 
   def self.restore_backup_to(path, index)
@@ -110,38 +99,6 @@ module Backup
     end
   end
 
-  def self.create_backup_index(path, hash_files)
-    FileUtils.mkdir_p(path) unless Dir.exists?(path)
-
-    File.open("#{path}/index.yml", "w").puts hash_files.to_yaml
-  end
-
-  def self.create_backup_files(path, files, key = nil)
-    FileUtils.mkdir_p(path) unless Dir.exists?(path)
-
-    files.each {|file| Backup::copy_file_to_backup(path, file, key)}
-  end
-
-  def self.create_backup(path, hash_files, key = nil)
-    FileUtils.mkdir_p(path) unless Dir.exists?(path)
-
-    Backup::create_backup_index(path, hash_files)
-
-    hash_files.each_key {|file| Backup::copy_file_to_backup(path,
-                                                            file, key)}
-  end
-
-  def self.copy_file_to_backup(path, file, key = nil)
-    unless Dir.exists?(file)
-      File.open("#{path}/#{Digest::MD5.hexdigest(file)}", "w") do |f|
-        data = open(file).read
-        data = Backup::encrypt_data(key, data) unless key.nil?
-
-        f.puts data
-      end
-    end
-  end
-
   def self.fetch_versions_of_backup(path)
     Dir["#{path}/*"].map do |backup|
       backup.match(/[0-9]{12}$/)[0] if backup.match(/[0-9]{12}$/)
@@ -162,12 +119,6 @@ module Backup
 
   def self.fetch_backup_index(version)
     YAML::load(open("#{version}/index.yml").read)
-  end
-
-  def self.create_jar(jar_path, path)
-    FileUtils.mkdir_p(jar_path) unless Dir.exists?(jar_path)
-
-    File.open("#{jar_path}/jar", "w").puts Backup::FileItem.semantic_path(path)
   end
 
   def self.aes(command, key, data)
