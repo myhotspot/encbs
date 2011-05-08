@@ -1,9 +1,3 @@
-require 'socket'
-
-require 'backup/file_item'
-require 'backup/timestamp'
-require 'backup/jar'
-
 module Backup
   class Instance
     attr_reader :root_path, :hostname, :timestamp

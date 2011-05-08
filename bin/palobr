@@ -6,6 +6,7 @@ require 'yaml'
 require 'digest'
 require 'fileutils'
 require 'openssl'
+require 'socket'
 require 'helpers'
 
 safe_require do
@@ -14,6 +15,9 @@ safe_require do
 end
 
 require 'backup'
+require 'backup/file_item'
+require 'backup/timestamp'
+require 'backup/jar'
 require 'crypto'
 
 opts = Slop.parse :help => true do
@@ -54,7 +58,9 @@ if opts.generate?
   exit
 end
 
-@backup = Backup::Instance.new "backup"
+#FIXME
+try_create_dir "/tmp/backup"
+@backup = Backup::Instance.new "/tmp/backup"
 
 if opts.list?
   jars_list = @backup.jars
