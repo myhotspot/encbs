@@ -40,11 +40,11 @@ module Backup
       end
 
       #FIXME: local changes.
-      new_files = @local_files.select {|k, v| v[:timestamp] == @timestamp}
-      if new_files.empty?
-        puts "#{"Nothing to backup:".red} #{@local_path.dark_green}"
-        return
-      end
+      #new_files = @local_files.select {|k, v| v[:timestamp] == @timestamp}
+      #if new_files.empty?
+      #  puts "#{"Nothing to backup:".red} #{@local_path.dark_green}"
+      #  return
+      #end
 
       FileItem.create_directory_once meta_jars_path, meta_jar_path, jar_data_path
       FileItem.create_file_once "#{meta_jars_path}/#{jar_hash}",
@@ -52,7 +52,8 @@ module Backup
       FileItem.create_file_once "#{meta_jar_path}/#{@timestamp}.yml",
       													@local_files.to_yaml
 
-      new_files.keys.each do |file|
+      #new_files.keys.each do |file|
+      @local_files.keys.each do |file|
         unless Dir.exists?(file)
           FileItem.create_file_once "#{jar_data_path}/#{FileItem.file_hash file}",
                                     open(file).read
