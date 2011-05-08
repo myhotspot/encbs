@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "palobr"
   gem.homepage = "http://github.com/TimothyKlim/palobr"
   gem.license = "MIT"
-  gem.summary = %Q{Simple backup system for push into the cloud}
-  gem.description = %Q{Simple backup system for push into the cloud}
+  gem.summary = %Q{Simple backup system for pushing into cloud}
+  gem.description = %Q{Simple backup system for pushing into cloud}
   gem.email = "klimtimothy@gmail.com"
   gem.authors = ["Timothy Klim"]
   # dependencies defined in Gemfile

@@ -1,6 +1,11 @@
-backup
 .DS_Store
+.bundle
+.yardoc
+Gemfile.lock
+backup
+coverage
+doc
+pkg
+rdoc
 rsa_key
 rsa_key.pub
-Gemfile.lock
-pkg
