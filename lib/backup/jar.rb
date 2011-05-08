@@ -108,6 +108,8 @@ module Backup
       end
 
       def jar_versions(root_path, jar, hash = false)
+        jar = jar.chop if jar =~ /\/$/
+
         jar = Digest::MD5.hexdigest(jar) unless hash
         meta_jar_path = "#{root_path}/meta/#{jar}"
 

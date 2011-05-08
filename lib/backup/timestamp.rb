@@ -42,7 +42,7 @@ module Backup
     end
 
     def self.to_s(time)
-      time.strftime "%Y.%m.%d %H:%M:%S" if time.is_a? Time
+      time.strftime "%y.%m.%d %H:%M:%S" if time.is_a? Time
     end
   end
 end
