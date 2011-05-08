@@ -138,7 +138,6 @@ if opts.rescue?
   end
 
   #TODO: Confirm flag
-  #TODO: fetch last diff index or root index. And add files to array that fetch these after
   #TODO: Empty destination directory
 
   @index = {}
@@ -183,57 +182,7 @@ if opts.add?
   end
 
   paths.each do |path|
-    unless opts.increment?
-      @backup.create! path
-    else
-      if Backup::last_backup_path(@jar_path).nil?
-        puts_fail "Before create incremental backup, you need to create a full backup."
-      end
-
-      current_path = "#{@jar_path}/#{Backup::last_backup_path(@jar_path)}"
-
-      unless Backup::backup_diff_present?(current_path)
-        previous_index = Backup::fetch_backup_index(current_path)
-      else
-        last_diff = Backup::backup_diff_versions(current_path)[-1]
-        previous_index = Backup::fetch_backup_index("#{current_path}/diff/#{last_diff}")
-      end
-
-      new_files = []
-
-      @files.each_key do |file|
-        current_file = @files[file].dup
-        current_file.delete(:timestamp)
-
-        unless previous_index[file].nil?
-          previous_file = previous_index[file].dup
-          previous_file.delete(:timestamp)
-
-          if (current_file == previous_file) or (current_file[:checksum] ==
-                                                 previous_file[:checksum])
-            @files[file][:timestamp] = previous_index[file][:timestamp]
-          else
-            new_files << file
-          end
-        else
-          #TODO: If file has renamed, find it and change path, without upload
-          new_files << file
-        end
-      end
-
-      if @files.length > 1
-        diff_path = "#{current_path}/diff/#{@timestamp}"
-      else
-        diff_path = current_path
-      end
-
-      unless @files == previous_index
-        Backup::create_backup_index(diff_path, @files)
-        Backup::create_backup_files(diff_path, new_files, @key) unless new_files.empty?
-      else
-        puts "Nothing to backup: #{Backup::FileItem.semantic_path(path)}"
-      end
-    end
+    @backup.create! path, opts.increment?
   end
 else
   puts_fail "Before create backup, you must add path." if opts.increment?

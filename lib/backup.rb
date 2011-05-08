@@ -12,9 +12,9 @@ module Backup
       @key = open(path).read
     end
 
-    def create!(local_path)
+    def create!(local_path, increment = false)
       jar = Jar.new(@root_path, local_path)
-      jar.save
+      jar.save(increment)
     end
 
     def jars

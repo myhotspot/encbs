@@ -10,8 +10,41 @@ module Backup
       Digest::MD5.hexdigest(@local_path)
     end
 
-    def save
-      @local_files ||= hash_local_files
+    def save(increment = false)
+      unless increment
+        @local_files = hash_local_files
+      else
+        @local_files = {}
+        current_files = hash_local_files
+
+        last_timestamp = Jar.jar_versions(@root_path, jar_hash, true).last
+        last_index = Jar.fetch_index_for(@root_path, jar_hash, last_timestamp)
+
+        current_files.keys.each do |file|
+          @local_files[file] = current_files[file]
+
+          current = current_files[file].dup
+          current.delete(:timestamp)
+
+          unless last_index[file].nil?
+            backup = last_index[file].dup
+            backup.delete(:timestamp)
+
+            if (current == backup) or
+               (!current[:checksum].nil? and current[:checksum] == backup[:checksum])
+
+              @local_files[file][:timestamp] = last_index[file][:timestamp]
+            end
+          end
+        end
+      end
+
+      #FIXME: local changes.
+      new_files = @local_files.select {|k, v| v[:timestamp] == @timestamp}
+      if new_files.empty?
+        puts "#{"Nothing to backup:".red} #{@local_path.dark_green}"
+        return
+      end
 
       FileItem.create_directory_once meta_jars_path, meta_jar_path, jar_data_path
       FileItem.create_file_once "#{meta_jars_path}/#{jar_hash}",
@@ -19,7 +52,7 @@ module Backup
       FileItem.create_file_once "#{meta_jar_path}/#{@timestamp}.yml",
       													@local_files.to_yaml
 
-      @local_files.keys.each do |file|
+      new_files.keys.each do |file|
         unless Dir.exists?(file)
           FileItem.create_file_once "#{jar_data_path}/#{FileItem.file_hash file}",
                                     open(file).read
@@ -30,7 +63,7 @@ module Backup
     def hash_local_files
       files = {}
 
-      puts_verbose "Create index for #{@local_path}"
+      puts_verbose "Create index for #{@local_path.dark_green}"
 
       if Dir.exists? @local_path
         matches = Dir.glob(File.join(@local_path, "/**/*"), File::FNM_DOTMATCH)
