@@ -3,3 +3,4 @@ backup
 rsa_key
 rsa_key.pub
 Gemfile.lock
+pkg
