@@ -2,7 +2,6 @@ require File.expand_path("../helper", __FILE__)
 
 class BackupTimestampTest < Test::Unit::TestCase
   def test_parse_timestamp
-    # TODO: Parse less and greater
     assert_equal Backup::Timestamp.parse_timestamp("110102201130"),
                  Time.new(2011, 01, 02, 20, 11, 30, 0)
 

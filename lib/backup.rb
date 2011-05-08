@@ -36,6 +36,10 @@ module Backup
       end
     end
 
+    def jar_versions(jar)
+      Jar.jar_versions(root_path, jar, !!jar[/^[0-9a-z]{32}$/])
+    end
+
   end
 
   def self.restore_backup_to(path, index)

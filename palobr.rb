@@ -100,23 +100,16 @@ else
 end
 
 if opts.jar?
-  #FIXME: Support hash as path too
-  #TODO: DSL for that
-  jar_path = @backup.jar_path(File.expand_path(opts[:jar]))
-
-  versions = Backup::fetch_versions_of_backup jar_path
+  versions = @backup.jar_versions(opts[:jar])
 
   unless versions.empty?
     puts "Versions of backup: #{opts[:jar]}"
-    versions.each do |version|
-      puts "    #{Backup::Timestamp.parse_timestamp version}"
 
-      Backup::backup_diff_versions("#{jar_path}/#{version}").each do |diff|
-        puts "      diff: #{Backup::Timestamp.parse_timestamp diff}"
-      end
+    versions.each do |version|
+      puts "    #{version}: #{Backup::Timestamp.to_str(version)}"
     end
   else
-    puts "Versions doesn't exists for backup: #{opts[:jar]}"
+    puts "Versions doesn't exists for jar: #{opts[:jar]}"
   end
 
   exit
@@ -143,7 +136,6 @@ if opts.rescue?
   end
 
   #TODO: Confirm flag
-  #TODO: Filters for date: < now, or 12.12.03 >
   #TODO: fetch last diff index or root index. And add files to array that fetch these after
   #TODO: Empty destination directory
 
