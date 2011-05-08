@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-$LOAD_PATH << File.dirname(__FILE__) + '/lib/'
+$LOAD_PATH.unshift(File.dirname(__FILE__) + '/palobr/')
 
 require 'rubygems'
 require 'yaml'
@@ -45,17 +45,6 @@ end
 $VERBOSE = true
 $COLORIZE = true
 
-#FIXME: REMOVE!!
-require 'socket'
-if opts.hostname?
-  @hostname = opts[:hostname]
-else
-  @hostname = Socket.gethostname
-end
-
-#FIXME: Add cloud and config paths
-@root_path = "backup/#{@hostname}" #TODO: REMOVE!!
-
 if opts.generate?
   puts "Generate 4096 bits RSA keys"
   Crypto::create_keys(File.join(Dir.getwd, "rsa_key"),
@@ -65,7 +54,7 @@ if opts.generate?
   exit
 end
 
-@backup = Backup::Instance.new @root_path
+@backup = Backup::Instance.new "backup"
 
 if opts.list?
   jars_list = @backup.jars

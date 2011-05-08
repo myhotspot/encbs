@@ -1,4 +1,4 @@
-$LOAD_PATH << File.dirname(__FILE__) + '/../lib/'
+$LOAD_PATH.unshift(File.dirname(__FILE__) + '/../lib/palobr/')
 
 require 'rubygems'
 require 'test/unit'

@@ -9,8 +9,8 @@ module Backup
     attr_reader :root_path, :hostname, :timestamp
 
     def initialize(root_path, hostname = nil, cloud = nil)
-      @root_path = root_path
       @hostname = hostname || Socket.gethostname
+      @root_path = "#{root_path}/#{@hostname}"
       @timestamp = Backup::Timestamp.create
     end
 

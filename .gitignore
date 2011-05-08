@@ -2,3 +2,4 @@ backup
 .DS_Store
 rsa_key
 rsa_key.pub
+Gemfile.lock
