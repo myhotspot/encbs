@@ -46,7 +46,7 @@ if ARGV.empty?
 end
 
 # $VERBOSE = opts.verbose?
-$VERBOSE = true
+$PRINT_VERBOSE = true
 $COLORIZE = true
 
 if opts.generate?

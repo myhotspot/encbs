@@ -5,7 +5,7 @@ def puts_fail(msg)
 end
 
 def puts_verbose(msg)
-  puts msg if $VERBOSE
+  puts msg if $PRINT_VERBOSE
 end
 
 def safe_require(&block)

@@ -33,11 +33,11 @@ module Backup
       def dir(path, mask = "*")
         path.chop! if path =~ /\/$/
         path = path[1, path.length] if path =~ /^\//
-        mask = mask.gsub('.', '\.').gsub('*', '.*')
+        mask = mask.gsub('.', '\.').gsub('*', '[^\/]')
 
         files = @directory.files.map &:key
         files.map do |item|
-          match = item.match(/^#{path}\/([^\/]+)#{mask}$/)
+          match = item.match(/^#{path}\/([^\/]+#{mask}).*$/)
           match[1] if match
         end.compact.uniq
       end
