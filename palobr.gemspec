@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Timothy Klim"]
-  s.date = %q{2011-05-08}
+  s.date = %q{2011-05-09}
   s.default_executable = %q{palobr}
   s.description = %q{Simple backup system for pushing into cloud}
   s.email = %q{klimtimothy@gmail.com}
@@ -27,6 +27,9 @@ Gem::Specification.new do |s|
     "bin/palobr",
     "lib/backup.rb",
     "lib/backup/file_item.rb",
+    "lib/backup/file_item/base.rb",
+    "lib/backup/file_item/cloud.rb",
+    "lib/backup/file_item/local.rb",
     "lib/backup/jar.rb",
     "lib/backup/timestamp.rb",
     "lib/crypto.rb",
