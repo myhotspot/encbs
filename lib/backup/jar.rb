@@ -1,9 +1,10 @@
 module Backup
   class Jar
-    def initialize(root_path, local_path)
+    def initialize(file_item, root_path, local_path)
       @root_path = root_path
       @local_path = local_path
       @timestamp = Backup::Timestamp.create
+      @file_item = file_item
     end
 
     def jar_hash
@@ -53,17 +54,17 @@ module Backup
       #  return
       #end
 
-      FileItem.create_directory_once meta_jars_path, meta_jar_path, jar_data_path
-      FileItem.create_file_once "#{meta_jars_path}/#{jar_hash}",
-                                FileItem.semantic_path(@local_path)
-      FileItem.create_file_once "#{meta_jar_path}/#{@timestamp}.yml",
-      													@local_files.to_yaml
+      @file_item.create_directory_once meta_jars_path, meta_jar_path, jar_data_path
+      @file_item.create_file_once "#{meta_jars_path}/#{jar_hash}",
+                                  @file_item.semantic_path(@local_path)
+      @file_item.create_file_once "#{meta_jar_path}/#{@timestamp}.yml",
+                                  @local_files.to_yaml
 
       #new_files.keys.each do |file|
       @local_files.keys.each do |file|
         unless Dir.exists?(file)
-          FileItem.create_file_once "#{jar_data_path}/#{FileItem.file_hash file}",
-                                    open(file).read
+          @file_item.create_file_once "#{jar_data_path}/#{@file_item.file_hash file}",
+                                      open(file).read
         end
       end
     end
@@ -83,50 +84,50 @@ module Backup
         matches << @local_path
 
         matches.each do |match|
-          files.merge!(FileItem.stat(match, @timestamp))
+          files.merge!(@file_item.stat(match, @timestamp))
         end
       else
-        files = FileItem.stat(@local_path, @timestamp)
+        files = @file_item.stat(@local_path, @timestamp)
       end
 
       files
     end
 
     class << self
-      def hash_to_path(root_path, hash)
-        FileItem.read_file("#{root_path}/meta/jars/#{hash}").chomp
+      def hash_to_path(file_item, root_path, hash)
+        file_item.read_file("#{root_path}/meta/jars/#{hash}").chomp
       rescue Errno::ENOENT
         ""
       end
 
-      def all(root_path)
-        hashes = FileItem.dir("#{root_path}/meta/jars").map do |backup|
+      def all(file_item, root_path)
+        hashes = file_item.dir("#{root_path}/meta/jars").map do |backup|
           backup[/[0-9a-z]{32}$/]
         end.compact.sort
 
         result = {}
 
         hashes.each do |hash|
-          jar_local_path = Jar.hash_to_path(root_path, hash)
+          jar_local_path = Jar.hash_to_path(file_item, root_path, hash)
           result[jar_local_path] = hash unless jar_local_path.empty?
         end
 
         result
       end
 
-      def jar_versions(root_path, jar, hash = false)
+      def jar_versions(file_item, root_path, jar, hash = false)
         jar = jar.chop if jar =~ /\/$/
 
         jar = Digest::MD5.hexdigest(jar) unless hash
         meta_jar_path = "#{root_path}/meta/#{jar}"
 
-        FileItem.dir(meta_jar_path, "*.yml").map do |file|
+        file_item.dir(meta_jar_path, "*.yml").map do |file|
           file.match(/\/([0-9]{12}).yml$/)[1]
         end.sort
       end
 
-      def fetch_index_for(root_path, hash, timestamp)
-        index = FileItem.read_file "#{root_path}/meta/#{hash}/#{timestamp}.yml"
+      def fetch_index_for(file_item, root_path, hash, timestamp)
+        index = file_item.read_file "#{root_path}/meta/#{hash}/#{timestamp}.yml"
         YAML::load(index) unless index.nil?
       end
     end

@@ -1,9 +1,21 @@
+require 'backup/file_item'
+require 'backup/timestamp'
+require 'backup/jar'
+require 'crypto'
+
 module Backup
   class Instance
-    attr_reader :root_path, :hostname, :timestamp
+    attr_reader :root_path, :timestamp
+    attr_accessor :hostname
 
-    def initialize(root_path, hostname = nil, cloud = nil)
-      @hostname = hostname || Socket.gethostname
+    def initialize(root_path, *args)
+      if args.is_a?(Hash) and args[:cloud]
+
+      else
+        @file_item = Backup::FileItem.for :local
+      end
+
+      @hostname = Socket.gethostname
       @root_path = "#{root_path}/#{@hostname}"
       @timestamp = Backup::Timestamp.create
     end
@@ -13,29 +25,20 @@ module Backup
     end
 
     def create!(local_path, increment = false)
-      jar = Jar.new(@root_path, local_path)
+      jar = Jar.new(@file_item, @root_path, local_path)
       jar.save(increment)
     end
 
     def jars
-      Jar.all(@root_path)
-    end
-
-    def copy_file_to_backup(path, file)
-      unless Dir.exists?(file)
-        File.open("#{path}/#{Digest::MD5.hexdigest(file)}", "w") do |f|
-          data = open(file).read
-          f.puts data
-        end
-      end
+      Jar.all(@file_item, @root_path)
     end
 
     def jar_versions(jar)
-      Jar.jar_versions(root_path, jar, !!jar[/^[0-9a-z]{32}$/])
+      Jar.jar_versions(@file_item, @root_path, jar, !!jar[/^[0-9a-z]{32}$/])
     end
 
     def restore_jar_to(hash, timestamp, to)
-      files = Jar.fetch_index_for(root_path, hash, timestamp)
+      files = Jar.fetch_index_for(@file_item, @root_path, hash, timestamp)
 
       files.keys.sort.each do |file|
         restore_file = File.join(to, file)
@@ -47,7 +50,7 @@ module Backup
           File.chmod current_file[:mode], restore_file
           File.chown current_file[:uid], current_file[:gid], restore_file
 
-          file_ok = FileItem.stat(restore_file)[restore_file]
+          file_ok = @file_item.stat(restore_file)[restore_file]
           
           check_mode(restore_file, file_ok[:mode], current_file[:mode])
           check_rights(restore_file, file_ok[:uid], file_ok[:gid],
@@ -61,13 +64,13 @@ module Backup
               f.chown current_file[:uid], current_file[:gid]
 
               remote_path = "#{@root_path}/#{hash}/#{current_file[:timestamp]}"
-              remote_path += "/#{FileItem.file_hash file}"
+              remote_path += "/#{@file_item.file_hash file}"
 
-              data = FileItem.read_file remote_path
+              data = @file_item.read_file remote_path
               f.puts data
             end
 
-            file_ok = FileItem.stat(restore_file)[restore_file]
+            file_ok = @file_item.stat(restore_file)[restore_file]
           
             check_mode(restore_file, file_ok[:mode], current_file[:mode])
             check_rights(restore_file, file_ok[:uid], file_ok[:gid],
