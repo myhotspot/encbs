@@ -55,10 +55,14 @@ module Backup
       #end
 
       @file_item.create_directory_once meta_jars_path, meta_jar_path, jar_data_path
-      @file_item.create_file_once "#{meta_jars_path}/#{jar_hash}",
-                                  @file_item.semantic_path(@local_path)
-      @file_item.create_file_once "#{meta_jar_path}/#{@timestamp}.yml",
-                                  @local_files.to_yaml
+      @file_item.create_file_once(
+      	"#{meta_jars_path}/#{jar_hash}",
+        @file_item.semantic_path(@local_path)
+      )
+      @file_item.create_file_once(
+      	"#{meta_jar_path}/#{@timestamp}.yml",
+        @local_files.to_yaml
+			)
 
       #new_files.keys.each do |file|
       @local_files.keys.each do |file|

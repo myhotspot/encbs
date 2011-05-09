@@ -9,7 +9,7 @@ module Backup
         puts_fail "Empty hash in Cloud initialize method" if args.empty?
 
         [:key, :secret, :bucket].each do |arg|
-          puts_fail "#{arg} should not be empty" if args[arg].nil?
+          puts_fail "'#{arg.to_s.green}' should not be empty" if args[arg].nil?
           instance_eval %{@#{arg} = args[:#{arg}]}
         end
 
@@ -17,22 +17,24 @@ module Backup
       end
 
       def create_directory_once(*directories)
-        directories.each do |path|
-          FileUtils.mkdir_p(path) unless Dir.exists?(path)
-        end
+        # Nothing happen
       end
 
       def create_file_once(file, data)
-        File.open(file, "w").puts(data) unless File.exists?(file)
+        @directory.files.create(
+        	:key => delete_slashes(file),
+          :body => data
+        )
       end
 
       def read_file(file)
-        open(file).read if File.exists? file
+        file = delete_slashes(file)
+        remote_file = @directory.files.get(file)
+        remote_file.body if remote_file
       end
 
       def dir(path, mask = "*")
-        path.chop! if path =~ /\/$/
-        path = path[1, path.length] if path =~ /^\//
+        path = delete_slashes(path)
         mask = mask.gsub('.', '\.').gsub('*', '[^\/]')
 
         files = @directory.files.map &:key
@@ -44,15 +46,27 @@ module Backup
 
       private
 
-      def try_connect_to_cloud
-        #FIXME: Check for errors
-        @connection = ::Fog::Storage.new(
-          :provider                 => 'AWS',
-          :aws_secret_access_key    => @secret,
-          :aws_access_key_id        => @key
-        )
+      def delete_slashes(str)
+        str.chop! if str =~ /\/$/
+        str = str[1, str.length] if str =~ /^\//
+        str
+      end
 
-        @directory = @connection.directories.get(@bucket)
+      def try_connect_to_cloud
+        begin
+          @connection = ::Fog::Storage.new(
+            :provider => 'AWS',
+            :aws_secret_access_key => @secret,
+            :aws_access_key_id => @key
+          )
+
+          @directory = @connection.directories.get(@bucket)
+        rescue Exception => e
+          puts_verbose e.message
+          puts_fail "403 Forbidden"
+        end
+
+        puts_fail "Bucket '#{@bucket}' is not exists." if @directory.nil?
       end
 		end
   end

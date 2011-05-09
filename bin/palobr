@@ -18,9 +18,9 @@ require 'backup'
 
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
-  on :aws_bucket, "Set Amazon S3 bucket to backup"
-  on :aws_key, "Set API key to access Amazon S3"
-  on :aws_secret, "Set API secret to access Amazon S3"
+  on :b, :bucket, "Set Amazon S3 bucket to backup", true
+  on :k, :key, "Set API key to access Amazon S3", true
+  on :s, :secret, "Set API secret to access Amazon S3", true
   on :c, :config, "Use config file to upload backup", true #TODO
   on :colorize, "Colorize print to console"
   on :d, :date, "Date for backup restore (default: last)", true
@@ -29,7 +29,7 @@ opts = Slop.parse :help => true do
   on :h, :hostname, "Set hostname (default: system)", true
   on :i, :increment, "Use increment mode for backup (default: false)"
   on :j, :jar, "Versions of jar (option: hash or path)", true
-  on :k, :key, "Key to encrypt/decrypt backup", true
+  # on :k, :keyfile, "Key to encrypt/decrypt backup", true
   on :l, :local, "Backup in local directory", true
   on :list, "List of jars"
   on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
@@ -51,8 +51,10 @@ $COLORIZE = true
 
 if opts.generate?
   puts "Generate 4096 bits RSA keys"
-  Crypto::create_keys(File.join(Dir.getwd, "rsa_key"),
-  										File.join(Dir.getwd, "rsa_key.pub"))
+  Crypto::create_keys(
+    File.join(Dir.getwd, "rsa_key"),
+  	File.join(Dir.getwd, "rsa_key.pub")
+  )
   puts "Done!"
 
   exit
@@ -62,13 +64,19 @@ if opts.local?
   try_create_dir opts[:local]
   @backup = Backup::Instance.new opts[:local]
 else
-  #FIXME: Show error if options for cloud is empty
-  @backup = Backup::Instance.new "backups", :cloud => true
+  [:key, :secret, :bucket].each do |arg|
+    puts_fail "Argument '--#{arg}' should not be empty" if opts[arg].nil?
+  end
+  @backup = Backup::Instance.new(
+    "backups",
+    true,
+    :bucket => opts[:bucket],
+    :key => opts[:key],
+    :secret => opts[:secret]
+  )
 end
 
 @backup.hostname = opts[:hostname] if opts.hostname?
-#puts "Dir: #{@backup.file_item.dir("/Users/").join(", ")}"
-#exit
 
 if opts.list?
   jars_list = @backup.jars
@@ -86,7 +94,7 @@ if opts.list?
 end
 
 #TODO: AES or RSA
-@backup.key = opts[:key] if opts.key?
+# @backup.key = opts[:key] if opts.key?
 
 if opts.date?
   date = opts[:date].split("-")

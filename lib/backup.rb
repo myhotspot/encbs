@@ -8,19 +8,20 @@ module Backup
     attr_reader :root_path, :timestamp, :hostname, :file_item
 
     def initialize(root_path, cloud = false, *args)
-      #FIXME
-      @hostname = Socket.gethostname
-
       if cloud
-        @file_item = Backup::FileItem.for :cloud, :bucket => "palobr",
-        																	:secret => "soSAoK/YSBhlWPoZIQorTqPfQvzxBTwf6wMK50LX",
-                                          :key => "AKIAJJB6XTJKM2LWOP7Q"
+        @file_item = Backup::FileItem.for :cloud, *args
       else
         @file_item = Backup::FileItem.for :local
       end
 
+      @hostname = Socket.gethostname
       @root_path = "#{root_path}/#{@hostname}"
       @timestamp = Backup::Timestamp.create
+    end
+
+    def hostname=(host)
+      @hostname = host
+      @root_path = "#{root_path}/#{@hostname}"
     end
 
     def key=(path)
@@ -56,8 +57,13 @@ module Backup
           file_ok = @file_item.stat(restore_file)[restore_file]
           
           check_mode(restore_file, file_ok[:mode], current_file[:mode])
-          check_rights(restore_file, file_ok[:uid], file_ok[:gid],
-          						 current_file[:uid], current_file[:gid])
+          check_rights(
+            restore_file,
+            file_ok[:uid],
+            file_ok[:gid],
+        		current_file[:uid],
+            current_file[:gid]
+          )
         else
           try_create_dir(File.dirname restore_file)
 
@@ -76,8 +82,13 @@ module Backup
             file_ok = @file_item.stat(restore_file)[restore_file]
           
             check_mode(restore_file, file_ok[:mode], current_file[:mode])
-            check_rights(restore_file, file_ok[:uid], file_ok[:gid],
-                         current_file[:uid], current_file[:gid])
+            check_rights(
+            	restore_file,
+              file_ok[:uid],
+              file_ok[:gid],
+              current_file[:uid],
+              current_file[:gid]
+            )
           rescue Errno::EACCES
             puts_fail "Permission denied for #{restore_file.dark_green}"
           end
