@@ -37,7 +37,7 @@ module Backup
 
         files = @directory.files.map &:key
         files.map do |item|
-          match = item.match(/#{path}\/([^\/]+)#{mask}$/)
+          match = item.match(/^#{path}\/([^\/]+)#{mask}$/)
           match[1] if match
         end.compact.uniq
       end

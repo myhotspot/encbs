@@ -67,8 +67,8 @@ else
 end
 
 @backup.hostname = opts[:hostname] if opts.hostname?
-puts "Dir: #{@backup.file_item.dir("Users").join(", ")}"
-exit
+#puts "Dir: #{@backup.file_item.dir("/Users/").join(", ")}"
+#exit
 
 if opts.list?
   jars_list = @backup.jars
