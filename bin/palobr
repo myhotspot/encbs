@@ -186,6 +186,7 @@ if opts.rescue?
     @backup.restore_jar_to(hash, timestamp, @to)
   end
 
+  puts "Done!".green
   exit
 end
 
