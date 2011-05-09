@@ -1,7 +1,7 @@
 module Backup
 	module FileItem
   	class Base
-      def self.semantic_path(path)
+      def semantic_path(path)
         if Dir.exists? path
           path += '/'
         else
@@ -9,7 +9,7 @@ module Backup
         end
       end
 
-      def self.stat(file, timestamp = nil)
+      def stat(file, timestamp = nil)
         files = {}
 
         stat = File.new(file).stat
@@ -28,10 +28,10 @@ module Backup
       rescue Exception => e
         STDERR.puts e
       end
-    end
 
-    def file_hash(file)
-      Digest::MD5.hexdigest file
+      def file_hash(file)
+        Digest::MD5.hexdigest file
+      end
     end
   end
 end
