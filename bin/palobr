@@ -118,10 +118,10 @@ if opts.jar?
     versions = @backup.jar_versions(jar)
 
     unless versions.empty?
-      puts "Versions of backup: #{jar}"
+      puts "Versions of backup '#{jar}':"
 
       versions.each do |version|
-        puts "    #{version}: #{Backup::Timestamp.to_str(version)}"
+        puts " => #{version.dark_green}: #{Backup::Timestamp.to_str(version)}"
       end
     else
       puts "Versions doesn't exists for jar: #{jar}"

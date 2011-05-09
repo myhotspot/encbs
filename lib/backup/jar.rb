@@ -121,13 +121,14 @@ module Backup
 
       def jar_versions(file_item, root_path, jar, hash = false)
         jar = jar.chop if jar =~ /\/$/
-
         jar = Digest::MD5.hexdigest(jar) unless hash
+
         meta_jar_path = "#{root_path}/meta/#{jar}"
 
         file_item.dir(meta_jar_path, "*.yml").map do |file|
-          file.match(/\/([0-9]{12}).yml$/)[1]
-        end.sort
+          match = file.match(/^\/?([0-9]{12}).yml$/)
+          match[1] if match
+        end.compact.sort
       end
 
       def fetch_index_for(file_item, root_path, hash, timestamp)
