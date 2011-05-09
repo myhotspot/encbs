@@ -13,10 +13,6 @@ module Backup
         File.open(file, "w").puts(data) unless File.exists?(file)
       end
 
-      def file_hash(file)
-        Digest::MD5.hexdigest file
-      end
-
       def read_file(file)
         open(file).read if File.exists? file
       end

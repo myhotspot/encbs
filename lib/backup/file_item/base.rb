@@ -29,5 +29,9 @@ module Backup
         STDERR.puts e
       end
     end
+
+    def file_hash(file)
+      Digest::MD5.hexdigest file
+    end
   end
 end

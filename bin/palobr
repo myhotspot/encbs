@@ -11,7 +11,7 @@ require 'helpers'
 
 safe_require do
   require 'slop'
-  # require 'fog'
+  require 'fog'
 end
 
 require 'backup'
@@ -62,10 +62,13 @@ if opts.local?
   try_create_dir opts[:local]
   @backup = Backup::Instance.new opts[:local]
 else
-  puts_fail "Set local path with backup"
+  #FIXME: Show error if options for cloud is empty
+  @backup = Backup::Instance.new "backups", :cloud => true
 end
 
 @backup.hostname = opts[:hostname] if opts.hostname?
+puts "Dir: #{@backup.file_item.dir("Users").join(", ")}"
+exit
 
 if opts.list?
   jars_list = @backup.jars
@@ -103,16 +106,18 @@ else
 end
 
 if opts.jar?
-  versions = @backup.jar_versions(opts[:jar])
+  opts[:jar].split(" ").each do |jar|
+    versions = @backup.jar_versions(jar)
 
-  unless versions.empty?
-    puts "Versions of backup: #{opts[:jar]}"
+    unless versions.empty?
+      puts "Versions of backup: #{jar}"
 
-    versions.each do |version|
-      puts "    #{version}: #{Backup::Timestamp.to_str(version)}"
+      versions.each do |version|
+        puts "    #{version}: #{Backup::Timestamp.to_str(version)}"
+      end
+    else
+      puts "Versions doesn't exists for jar: #{jar}"
     end
-  else
-    puts "Versions doesn't exists for jar: #{opts[:jar]}"
   end
 
   exit

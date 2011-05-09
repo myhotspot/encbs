@@ -6,7 +6,7 @@ module Backup
     def self.for(type, *args)
       case type
         when :cloud
-          Backup::FileItem::Cloud.new
+          Backup::FileItem::Cloud.new *args
         when :local
           Backup::FileItem::Local.new
 

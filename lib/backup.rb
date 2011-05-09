@@ -5,17 +5,20 @@ require 'crypto'
 
 module Backup
   class Instance
-    attr_reader :root_path, :timestamp
-    attr_accessor :hostname
+    attr_reader :root_path, :timestamp, :hostname, :file_item
 
-    def initialize(root_path, *args)
-      if args.is_a?(Hash) and args[:cloud]
+    def initialize(root_path, cloud = false, *args)
+      #FIXME
+      @hostname = Socket.gethostname
 
+      if cloud
+        @file_item = Backup::FileItem.for :cloud, :bucket => "palobr",
+        																	:secret => "soSAoK/YSBhlWPoZIQorTqPfQvzxBTwf6wMK50LX",
+                                          :key => "AKIAJJB6XTJKM2LWOP7Q"
       else
         @file_item = Backup::FileItem.for :local
       end
 
-      @hostname = Socket.gethostname
       @root_path = "#{root_path}/#{@hostname}"
       @timestamp = Backup::Timestamp.create
     end
