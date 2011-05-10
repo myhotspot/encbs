@@ -13,7 +13,7 @@ module Backup
           instance_eval %{@#{arg} = args[:#{arg}]}
         end
 
-        try_connect_to_cloud
+       try_to_connect_with_cloud 
       end
 
       def create_directory_once(*directories)
@@ -21,23 +21,30 @@ module Backup
       end
 
       def create_file_once(file, data)
-        @directory.files.create(
-        	:key => delete_slashes(file),
-          :body => data
-        )
+        try_to_work_with_cloud do
+          @directory.files.create(
+            :key => delete_slashes(file),
+            :body => data
+          )
+        end
       end
 
       def read_file(file)
-        file = delete_slashes(file)
-        remote_file = @directory.files.get(file)
-        remote_file.body if remote_file
+        try_to_work_with_cloud do
+          file = delete_slashes(file)
+          remote_file = @directory.files.get(file)
+          remote_file.body if remote_file
+       	end
       end
 
       def dir(path, mask = "*")
         path = delete_slashes(path)
         mask = mask.gsub('.', '\.').gsub('*', '[^\/]')
 
-        files = @directory.files.map &:key
+        try_to_work_with_cloud do
+          files = @directory.files.map &:key
+        end
+
         files.map do |item|
           match = item.match(/^#{path}\/([^\/]+#{mask}).*$/)
           match[1] if match
@@ -52,7 +59,18 @@ module Backup
         str
       end
 
-      def try_connect_to_cloud
+      def try_to_work_with_cloud(&block)
+        begin
+          yield
+        rescue Exception => e
+          try_to_connect_with_cloud 
+
+          yield
+        end
+      end
+
+
+      def try_to_connect_with_cloud
         begin
           @connection = ::Fog::Storage.new(
             :provider => 'AWS',

@@ -47,13 +47,6 @@ module Backup
         end
       end
 
-      #FIXME: local changes.
-      #new_files = @local_files.select {|k, v| v[:timestamp] == @timestamp}
-      #if new_files.empty?
-      #  puts "#{"Nothing to backup:".red} #{@local_path.dark_green}"
-      #  return
-      #end
-
       @file_item.create_directory_once meta_jars_path, meta_jar_path, jar_data_path
       @file_item.create_file_once(
       	"#{meta_jars_path}/#{jar_hash}",
@@ -64,13 +57,29 @@ module Backup
         @local_files.to_yaml
 			)
 
-      #new_files.keys.each do |file|
+      if @file_item.is_a? Backup::FileItem::Cloud
+        pbar = ProgressBar.new(
+        	"Uploading",
+          @local_files.keys.count
+        )
+      else
+        pbar = ProgressBar.new(
+        	"Copying",
+          @local_files.keys.count
+        )
+      end
+
+      pbar.bar_mark = '*'
+
       @local_files.keys.each do |file|
         unless Dir.exists?(file)
           @file_item.create_file_once "#{jar_data_path}/#{@file_item.file_hash file}",
-                                      open(file).read
+                                      File.open(file)
+          pbar.inc
         end
       end
+
+      pbar.finish
     end
 
     def hash_local_files

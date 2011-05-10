@@ -12,6 +12,7 @@ require 'helpers'
 safe_require do
   require 'slop'
   require 'fog'
+  require 'progressbar'
 end
 
 require 'backup'

@@ -10,6 +10,7 @@ module Backup
       end
 
       def create_file_once(file, data)
+        date = date.read if date.is_a? File
         File.open(file, "w").puts(data) unless File.exists?(file)
       end
 
