@@ -41,10 +41,13 @@ module Backup
         path = delete_slashes(path)
         mask = mask.gsub('.', '\.').gsub('*', '[^\/]')
 
-        try_to_work_with_cloud do
-          files = @directory.files.map &:key
-        end
-
+        files = []
+        
+        files = @directory.files.all(
+          :prefix => path,
+          :max_keys => 30_000 #TODO: Fix or use it?
+        ).map &:key
+        
         files.map do |item|
           match = item.match(/^#{path}\/([^\/]+#{mask}).*$/)
           match[1] if match
@@ -68,7 +71,6 @@ module Backup
           yield
         end
       end
-
 
       def try_to_connect_with_cloud
         begin
