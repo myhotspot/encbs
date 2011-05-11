@@ -62,4 +62,12 @@ class BackupTimestampTest < Test::Unit::TestCase
     assert_equal(Backup::Timestamp.create.length, 12)
     assert_equal(Backup::Timestamp.create(time), "110102235959")
   end
+  
+  def test_formatted_timestamp
+    time = Time.new(2011, 01, 02, 23, 59, 30, 0)
+    
+    assert_equal Backup::Timestamp.to_s(time), "11.01.02 23:59:30"
+    assert_equal Backup::Timestamp.to_s(51), nil
+    assert_equal Backup::Timestamp.to_str("110102235930"), "11.01.02 23:59:30"
+  end
 end

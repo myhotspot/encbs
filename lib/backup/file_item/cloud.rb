@@ -43,7 +43,7 @@ module Backup
 
         files = @directory.files.all(
           :prefix => path,
-          :max_keys => 30_000 #TODO: Fix or use it?
+          :max_keys => 30_000
         ).map &:key
         
         files.map do |item|

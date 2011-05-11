@@ -8,3 +8,4 @@ pkg
 rdoc
 rsa_key
 rsa_key.pub
+test/fixtures/backups
