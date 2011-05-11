@@ -25,17 +25,16 @@ opts = Slop.parse :help => true do
   on :c, :config, "Use config file to upload backup", true #TODO
   on :colorize, "Colorize print to console"
   on :d, :date, "Date for backup restore (default: last)", true
-  on :f, :find, "Find file or directory in backups" #TODO
-  on :g, :generate, "Generate 4096 bits RSA keys"
+  on :g, :generate, "Generate RSA keys (option: 4096, 2048)", true
   on :h, :hostname, "Set hostname (default: system)", true
   on :i, :increment, "Use increment mode for backup (default: false)"
   on :j, :jar, "Versions of jar (option: hash or path)", true
-  # on :k, :keyfile, "Key to encrypt/decrypt backup", true
+  on :t, :token, "RSA Key to encrypt/decrypt backup data", true
   on :l, :local, "Backup in local directory", true
   on :list, "List of jars"
   on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
   on :t, :to, "Path to recovery (default: /)", true
-  on :v, :verbose, "Verbose mode" #TODO
+  on :v, :verbose, "Verbose mode"
 
   banner "Usage:\n    $ encbs [options]\n\nOptions:"
 end
@@ -46,20 +45,19 @@ if ARGV.empty?
   exit
 end
 
-# $VERBOSE = opts.verbose?
-$PRINT_VERBOSE = true
-$COLORIZE = true
+$PRINT_VERBOSE = opts.verbose?
+$COLORIZE = opts.colorize?
 
-if opts.generate?
-  puts "Generate 4096 bits RSA keys"
-  Crypto::create_keys(
-    File.join(Dir.getwd, "rsa_key"),
-  	File.join(Dir.getwd, "rsa_key.pub")
-  )
-  puts "Done!"
-
-  exit
-end
+#if opts.generate?
+#  puts "Generate 4096 bits RSA keys"
+#  Crypto::create_keys(
+#    File.join(Dir.getwd, "rsa_key"),
+#  	File.join(Dir.getwd, "rsa_key.pub")
+#  )
+#  puts "Done!"
+#
+#  exit
+#end
 
 if opts.local?
   try_create_dir opts[:local]
