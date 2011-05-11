@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{encbs}
-  s.version = "0.1.0"
+  s.version = "0.1.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Timothy Klim"]
@@ -35,10 +35,14 @@ Gem::Specification.new do |s|
     "lib/backup/timestamp.rb",
     "lib/crypto.rb",
     "lib/helpers.rb",
+    "test/fixtures/etc/.hide",
+    "test/fixtures/etc/root/file",
+    "test/fixtures/test_crypto.rb",
     "test/helper.rb",
     "test/test_backup.rb",
     "test/test_backup_file_item.rb",
-    "test/test_backup_timestamp.rb"
+    "test/test_backup_timestamp.rb",
+    "test/test_jar.rb"
   ]
   s.homepage = %q{http://github.com/TimothyKlim/encbs}
   s.licenses = ["MIT"]
