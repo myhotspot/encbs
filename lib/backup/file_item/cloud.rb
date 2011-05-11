@@ -41,8 +41,6 @@ module Backup
         path = delete_slashes(path)
         mask = mask.gsub('.', '\.').gsub('*', '[^\/]')
 
-        files = []
-        
         files = @directory.files.all(
           :prefix => path,
           :max_keys => 30_000 #TODO: Fix or use it?

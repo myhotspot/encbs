@@ -37,7 +37,7 @@ opts = Slop.parse :help => true do
   on :t, :to, "Path to recovery (default: /)", true
   on :v, :verbose, "Verbose mode" #TODO
 
-  banner "Usage:\n    $ palobr [options]\n\nOptions:"
+  banner "Usage:\n    $ encbs [options]\n\nOptions:"
 end
 
 if ARGV.empty?
