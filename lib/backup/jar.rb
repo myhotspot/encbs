@@ -1,10 +1,11 @@
 module Backup
   class Jar
-    def initialize(file_item, root_path, local_path)
+    def initialize(file_item, root_path, local_path, key = nil)
       @root_path = root_path
       @local_path = local_path
       @timestamp = Backup::Timestamp.create
       @file_item = file_item
+      @key = key
     end
 
     def jar_hash
@@ -73,8 +74,17 @@ module Backup
 
       @local_files.keys.each do |file|
         unless Dir.exists?(file)
-          @file_item.create_file_once "#{jar_data_path}/#{@file_item.file_hash file}",
-                                      File.open(file)
+          data = if @key
+            @key.encrypt_to_stream(File.open(file).read)
+          else
+            File.open(file)
+          end
+
+          @file_item.create_file_once(
+          	"#{jar_data_path}/#{@file_item.file_hash file}",
+            data
+          )
+                                      
           pbar.inc
         end
       end

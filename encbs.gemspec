@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{encbs}
-  s.version = ""
+  s.version = "0.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Timothy Klim"]
@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
     "Rakefile",
     "VERSION",
     "bin/encbs",
+    "encbs.gemspec",
     "lib/backup.rb",
     "lib/backup/file_item.rb",
     "lib/backup/file_item/base.rb",

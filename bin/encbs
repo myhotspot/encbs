@@ -20,8 +20,6 @@ require 'backup'
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
   on :b, :bucket, "Set Amazon S3 bucket to backup", true
-  on :k, :key, "Set API key to access Amazon S3", true
-  on :s, :secret, "Set API secret to access Amazon S3", true
   on :c, :config, "Use config file to upload backup", true #TODO
   on :colorize, "Colorize print to console"
   on :d, :date, "Date for backup restore (default: last)", true
@@ -29,11 +27,14 @@ opts = Slop.parse :help => true do
   on :h, :hostname, "Set hostname (default: system)", true
   on :i, :increment, "Use increment mode for backup (default: false)"
   on :j, :jar, "Versions of jar (option: hash or path)", true
-  on :t, :token, "RSA Key to encrypt/decrypt backup data", true
+  on :k, :key, "Set API key to access Amazon S3", true
   on :l, :local, "Backup in local directory", true
   on :list, "List of jars"
   on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
+  on :s, :secret, "Set API secret to access Amazon S3", true
   on :t, :to, "Path to recovery (default: /)", true
+  on :token, "RSA Key to encrypt/decrypt backup data", true
+  on :threads, "Set count of thread (default: 1)", true
   on :v, :verbose, "Verbose mode"
 
   banner "Usage:\n    $ encbs [options]\n\nOptions:"
@@ -48,16 +49,19 @@ end
 $PRINT_VERBOSE = opts.verbose?
 $COLORIZE = opts.colorize?
 
-#if opts.generate?
-#  puts "Generate 4096 bits RSA keys"
-#  Crypto::create_keys(
-#    File.join(Dir.getwd, "rsa_key"),
-#  	File.join(Dir.getwd, "rsa_key.pub")
-#  )
-#  puts "Done!"
-#
-#  exit
-#end
+if opts.generate?
+  bits = opts[:generate].to_i
+  puts_fail "Unsupport #{bits} bits" unless bits == 4096 or bits == 2048
+  puts "Generate #{bits} bits RSA keys"
+  Crypto::create_keys(
+    File.join(Dir.getwd, "rsa_key"),
+  	File.join(Dir.getwd, "rsa_key.pub"),
+  	bits
+  )
+  puts "Done!"
+
+  exit
+end
 
 if opts.local?
   try_create_dir opts[:local]
@@ -92,8 +96,7 @@ if opts.list?
   exit
 end
 
-#TODO: AES or RSA
-# @backup.key = opts[:key] if opts.key?
+@backup.key = opts[:token] if opts.token?
 
 if opts.date?
   date = opts[:date].split("-")

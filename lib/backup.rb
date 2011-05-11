@@ -25,11 +25,11 @@ module Backup
     end
 
     def key=(path)
-      @key = open(path).read
+      @key = Crypto::Key.from_file(path)
     end
 
     def create!(local_path, increment = false)
-      jar = Jar.new(@file_item, @root_path, local_path)
+      jar = Jar.new(@file_item, @root_path, local_path, @key)
       jar.save(increment)
     end
 
@@ -43,6 +43,12 @@ module Backup
 
     def restore_jar_to(hash, timestamp, to)
       files = Jar.fetch_index_for(@file_item, @root_path, hash, timestamp)
+
+      pbar = ProgressBar.new(
+      	"Restoring",
+        files.keys.length
+      )
+      pbar.bar_mark = '*'
 
       files.keys.sort.each do |file|
         restore_file = File.join(to, file)
@@ -76,6 +82,7 @@ module Backup
               remote_path += "/#{@file_item.file_hash file}"
 
               data = @file_item.read_file remote_path
+							data = @key.decrypt_from_stream data if @key
               f.puts data
             end
 
@@ -93,28 +100,11 @@ module Backup
             puts_fail "Permission denied for #{restore_file.dark_green}"
           end
         end
+
+        pbar.inc
       end
 
+      pbar.finish
     end
-  end
-
-  def self.fetch_versions_of_backup(path)
-    Dir["#{path}/*"].map do |backup|
-      backup.match(/[0-9]{12}$/)[0] if backup.match(/[0-9]{12}$/)
-    end.compact.sort
-  end
-
-  def self.aes(command, key, data)
-    aes = OpenSSL::Cipher::Cipher.new('aes-256-cbc').send(command)
-    aes.key = key
-    aes.update(data) << aes.final
-  end
-
-  def self.encrypt_data(key, data)
-    Backup::aes(:encrypt, key, data) unless data.empty?
-  end
-
-  def self.decrypt_data(key, data)
-    Backup::aes(:decrypt, key, data)
   end
 end
