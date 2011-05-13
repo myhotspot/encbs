@@ -1,6 +1,7 @@
 .DS_Store
 .bundle
 .yardoc
+Encbsfile
 Gemfile.lock
 coverage
 doc

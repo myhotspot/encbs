@@ -16,11 +16,12 @@ safe_require do
 end
 
 require 'backup'
+require 'encbsconfig'
 
 opts = Slop.parse :help => true do
   on :a, :add, "Add path to backup", true
   on :b, :bucket, "Set Amazon S3 bucket to backup", true
-  on :c, :config, "Use config file to upload backup", true #TODO
+  on :c, :config, "Use config file to upload backup", true
   on :colorize, "Colorize print to console"
   on :d, :date, "Date for backup restore (default: last)", true
   on :g, :generate, "Generate RSA keys (option: 4096, 2048)", true
@@ -34,20 +35,26 @@ opts = Slop.parse :help => true do
   on :s, :secret, "Set API secret to access Amazon S3", true
   on :t, :to, "Path to recovery (default: /)", true
   on :token, "RSA Key to encrypt/decrypt backup data", true
-  on :threads, "Set count of thread (default: 1)", true
   on :v, :verbose, "Verbose mode"
 
   banner "Usage:\n    $ encbs [options]\n\nOptions:"
 end
 
-if ARGV.empty?
-  puts opts.help
+@config = EncbsConfig.new
 
-  exit
+if ARGV.empty?
+  if File.exists?("#{Dir.getwd}/Encbsfile")
+    @config.load "#{Dir.getwd}/Encbsfile"
+  else
+    puts opts.help
+    exit
+  end
 end
 
-$PRINT_VERBOSE = opts.verbose?
-$COLORIZE = opts.colorize?
+@config.load opts[:config] if opts.config?
+
+$PRINT_VERBOSE = @config.verbose || opts.verbose?
+$COLORIZE = @config.colorize || opts.colorize?
 
 if opts.generate?
   bits = opts[:generate].to_i
@@ -68,18 +75,20 @@ if opts.local?
   @backup = Backup::Instance.new opts[:local]
 else
   [:key, :secret, :bucket].each do |arg|
-    puts_fail "Argument '--#{arg}' should not be empty" if opts[arg].nil?
+    if opts[arg].nil? and @config.send(arg).nil?
+      puts_fail "Argument '--#{arg}' should not be empty"
+    end
   end
   @backup = Backup::Instance.new(
     "backups",
     true,
-    :bucket => opts[:bucket],
-    :key => opts[:key],
-    :secret => opts[:secret]
+    :bucket => @config.bucket || opts[:bucket],
+    :key => @config.key || opts[:key],
+    :secret => @config.secret || opts[:secret]
   )
 end
 
-@backup.hostname = opts[:hostname] if opts.hostname?
+@backup.hostname = @config.hostname || (opts[:hostname] if opts.hostname?)
 
 if opts.list?
   jars_list = @backup.jars
@@ -96,7 +105,13 @@ if opts.list?
   exit
 end
 
-@backup.key = opts[:token] if opts.token?
+if @config.token || opts.token?
+  key = @config.token || opts[:token]
+
+  puts_fail "Key #{key.dark_green} not found" unless File.exists? key
+
+  @backup.key = key
+end
 
 if opts.date?
   date = opts[:date].split("-")
@@ -192,8 +207,8 @@ if opts.rescue?
   exit
 end
 
-if opts.add?
-  paths = opts[:add].split(" ")
+if @config.paths || opts.add?
+  paths = @config.paths.split(" ") || opts[:add].split(" ")
 
   paths = paths.map do |path|
     path = File.expand_path path
