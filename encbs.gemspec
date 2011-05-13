@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{encbs}
-  s.version = "0.1.1"
+  s.version = "0.1.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Timothy Klim"]
-  s.date = %q{2011-05-11}
+  s.date = %q{2011-05-13}
   s.default_executable = %q{encbs}
   s.description = %q{Simple backup system for pushing into cloud}
   s.email = %q{klimtimothy@gmail.com}
@@ -34,6 +34,7 @@ Gem::Specification.new do |s|
     "lib/backup/jar.rb",
     "lib/backup/timestamp.rb",
     "lib/crypto.rb",
+    "lib/encbsconfig.rb",
     "lib/helpers.rb",
     "test/fixtures/etc/.hide",
     "test/fixtures/etc/root/file",
