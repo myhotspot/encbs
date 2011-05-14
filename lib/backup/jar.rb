@@ -19,13 +19,13 @@ module Backup
         @local_files = {}
         current_files = hash_local_files
 
-        last_timestamp = Jar.jar_versions(@root_path, jar_hash, true).last
+        last_timestamp = Jar.jar_versions(@file_item, @root_path, jar_hash, true).last
 
         if last_timestamp.nil?
           puts_fail "First you must create a full backup for #{@local_path.dark_green}"
         end
 
-        last_index = Jar.fetch_index_for(@root_path, jar_hash, last_timestamp)
+        last_index = Jar.fetch_index_for(@file_item, @root_path, jar_hash, last_timestamp)
 
         current_files.keys.each do |file|
           @local_files[file] = current_files[file]
@@ -58,6 +58,7 @@ module Backup
         @local_files.to_yaml
 			)
 
+      @local_files.select! {|k, v| v[:timestamp] == @timestamp}
       if @file_item.is_a? Backup::FileItem::Cloud
         pbar = ProgressBar.new(
         	"Uploading",
@@ -84,7 +85,7 @@ module Backup
           	"#{jar_data_path}/#{@file_item.file_hash file}",
             data
           )
-                                      
+
           pbar.inc
         end
       end

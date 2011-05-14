@@ -218,7 +218,7 @@ if @config.paths || opts.add?
   end
 
   paths.each do |path|
-    @backup.create! path, opts.increment?
+    @backup.create! path, @config.increment || opts.increment?
   end
 
   puts "Done!".green

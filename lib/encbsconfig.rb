@@ -7,6 +7,11 @@ class EncbsConfig
   end
 
   def load(path)
+    [:bucket, :colorize, :hostname, :increment, :key, :secret,
+      :token, :verbose].each {|attr| eval "@#{attr} = nil"}
+
+    @paths = ""
+
     eval "#{open(path).read}"
   end
 
