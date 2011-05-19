@@ -11,13 +11,14 @@ module Crypto
   end
   
   class Key
-    def initialize(data)
+    def initialize(data, size)
       @public = (data =~ /^-----BEGIN (RSA|DSA) PRIVATE KEY-----$/).nil?
       @key = OpenSSL::PKey::RSA.new(data)
+      @size = (size == 4096 ? 512 : 256)
     end
   
-    def self.from_file(filename)    
-      self.new File.read( filename )
+    def self.from_file(filename, size = 4096)
+      self.new(File.read(filename), size)
     end
 
     def encrypt_to_stream(data)
@@ -33,10 +34,11 @@ module Crypto
     end
 
     def decrypt_from_stream(data)
-      encrypt_data = StringIO.new data
+      encrypt_data = StringIO.new(data.chomp)
+      encrypt_data.seek(0)
       decrypt_data = ""
   
-      while buf = encrypt_data.read(256) do
+      while buf = encrypt_data.read(@size) do
         decrypt_data += decrypt(buf)
       end
 
@@ -45,10 +47,14 @@ module Crypto
 
     def encrypt(text)
       @key.send("#{key_type}_encrypt", text)
+    rescue Exception => e
+      puts_fail "RSA encrypt error: #{e.message}"
     end
     
     def decrypt(text)
       @key.send("#{key_type}_decrypt", text)
+     rescue Exception => e
+       puts_fail "RSA decrypt error: #{e.message}"
     end
   
     def private?

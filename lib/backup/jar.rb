@@ -53,12 +53,19 @@ module Backup
       	"#{meta_jars_path}/#{jar_hash}",
         @file_item.semantic_path(@local_path)
       )
+
+      # Save meta
+      unless @key.nil?
+        @local_files.merge!({
+          :checksum => Base64.encode64(@key.encrypt(@timestamp))
+        })
+      end
       @file_item.create_file_once(
       	"#{meta_jar_path}/#{@timestamp}.yml",
         @local_files.to_yaml
 			)
 
-      @local_files.select! {|k, v| v[:timestamp] == @timestamp}
+      @local_files.select! {|k, v| v[:timestamp] == @timestamp if v.is_a? Hash}
       if @file_item.is_a? Backup::FileItem::Cloud
         pbar = ProgressBar.new(
         	"Uploading",
@@ -95,8 +102,6 @@ module Backup
 
     def hash_local_files
       files = {}
-
-      puts_verbose "Create index for #{@local_path.dark_green}"
 
       if Dir.exists? @local_path
         matches = Dir.glob(File.join(@local_path, "/**/*"), File::FNM_DOTMATCH)

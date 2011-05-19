@@ -1,5 +1,5 @@
 def puts_fail(msg)
-  STDERR.puts "#{"Error: ".red}#{msg}"
+  STDERR.puts "#{"Error! ".red}#{msg}"
 
   exit msg.length
 end
@@ -10,15 +10,6 @@ end
 
 def print_verbose(msg)
   print msg if $PRINT_VERBOSE
-end
-
-def safe_require(&block)
-  yield
-rescue Exception => e
-  puts_fail %Q{This script use these gems: fog, slop.
-    Make sure that you have them all.
-    If you don't have, you may install them: $ gem install fog slop ruby-progressbar
-  }
 end
 
 def try_create_dir(dir)

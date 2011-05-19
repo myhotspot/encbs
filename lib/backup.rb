@@ -24,8 +24,8 @@ module Backup
       @root_path = "#{root_path}/#{@hostname}"
     end
 
-    def key=(path)
-      @key = Crypto::Key.from_file(path)
+    def rsa_key(path, size)
+      @key = Crypto::Key.from_file(path, size)
     end
 
     def create!(local_path, increment = false)
@@ -43,6 +43,15 @@ module Backup
 
     def restore_jar_to(hash, timestamp, to)
       files = Jar.fetch_index_for(@file_item, @root_path, hash, timestamp)
+
+      unless files[:checksum].nil?
+        if @key.nil? or
+           @key.decrypt(Base64.decode64(files[:checksum])) != timestamp
+
+          puts_fail "Checksum does not match."
+        end
+        files.delete :checksum
+      end
 
       pbar = ProgressBar.new(
       	"Restoring",
@@ -74,14 +83,14 @@ module Backup
           try_create_dir(File.dirname restore_file)
 
           begin
-            File.open(restore_file, "w") do |f|
+            File.open(restore_file, "wb") do |f|
               f.chmod current_file[:mode]
               f.chown current_file[:uid], current_file[:gid]
 
               remote_path = "#{@root_path}/#{hash}/#{current_file[:timestamp]}"
               remote_path += "/#{@file_item.file_hash file}"
 
-              data = @file_item.read_file remote_path
+              data = @file_item.read_file(remote_path)
 							data = @key.decrypt_from_stream data if @key
               f.puts data
             end

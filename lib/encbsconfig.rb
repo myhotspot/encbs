@@ -1,13 +1,13 @@
 class EncbsConfig
   attr_reader :paths, :bucket, :colorize, :hostname, :increment, :key,
-              :secret, :token, :verbose
+              :secret, :size, :token, :verbose
 
   def initialize
     @paths = ""
   end
 
   def load(path)
-    [:bucket, :colorize, :hostname, :increment, :key, :secret,
+    [:bucket, :colorize, :hostname, :increment, :key, :secret, :size,
       :token, :verbose].each {|attr| eval "@#{attr} = nil"}
 
     @paths = ""
@@ -45,6 +45,10 @@ class EncbsConfig
 
   def aws_bucket(attr)
     @bucket = attr
+  end
+
+  def key_size(attr)
+    @size = attr
   end
 
   def verbose!

@@ -8,12 +8,10 @@ require 'fileutils'
 require 'openssl'
 require 'socket'
 require 'helpers'
-
-safe_require do
-  require 'slop'
-  require 'fog'
-  require 'progressbar'
-end
+require 'slop'
+# require 'fog'
+require 'progressbar'
+require 'base64'
 
 require 'backup'
 require 'encbsconfig'
@@ -34,7 +32,8 @@ opts = Slop.parse :help => true do
   on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
   on :s, :secret, "Set API secret to access Amazon S3", true
   on :t, :to, "Path to recovery (default: /)", true
-  on :token, "RSA Key to encrypt/decrypt backup data", true
+  on :token, "RSA key to encrypt/decrypt backup data", true
+  on :size, "RSA private key length (default: 4096)", true
   on :v, :verbose, "Verbose mode"
 
   banner "Usage:\n    $ encbs [options]\n\nOptions:"
@@ -107,10 +106,11 @@ end
 
 if @config.token || opts.token?
   key = @config.token || opts[:token]
+  size = @config.size || opts[:size]
 
   puts_fail "Key #{key.dark_green} not found" unless File.exists? key
 
-  @backup.key = key
+  @backup.rsa_key(key, size.to_i)
 end
 
 if opts.date?
@@ -186,11 +186,11 @@ if opts.rescue?
     unless last_version.nil?
       @index[hash] = last_version
     else
-      error_path = "#{Backup::Jar.hash_to_path(@backup.root_path, hash)}"
+      error_path = "#{Backup::Jar.hash_to_path(@backup.file_item, @backup.root_path, hash)}"
       start_date = Backup::Timestamp.to_s(@start_date)
       end_date = Backup::Timestamp.to_s(@end_date)
 
-      unless @end_date == @start_date
+      unless @start_date.nil?
         puts_fail "Nothing found for #{error_path}, between date: #{start_date} - #{end_date}"
       else
         puts_fail "Nothing found for #{error_path}, for date: #{end_date}"
@@ -207,8 +207,12 @@ if opts.rescue?
   exit
 end
 
-if @config.paths || opts.add?
-  paths = @config.paths.split(" ") || opts[:add].split(" ")
+if !!@config.paths or opts.add?
+  if opts.add?
+    paths = opts[:add].split(" ")
+  else
+    paths = @config.paths.split(" ")
+  end
 
   paths = paths.map do |path|
     path = File.expand_path path

@@ -9,6 +9,7 @@ require 'socket'
 require 'helpers'
 require 'progressbar'
 require 'test/unit'
+require 'base64'
 
 require 'backup'
 
