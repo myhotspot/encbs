@@ -32,6 +32,20 @@ def check_rights(file, first_uid, first_gid, second_uid, second_gid)
   end
 end
 
+def create_lock
+  open("/tmp/encbs.lock", "w") do |f|
+    f.puts Process.pid
+  end
+end
+
+def remove_lock
+  FileUtils.rm "/tmp/encbs.lock" if File.exists? "/tmp/encbs.lock"
+end
+
+def lock_exists?
+  File.exists? "/tmp/encbs.lock"
+end
+
 class String
   def red
     colorize(self, "\e[1m\e[31m")

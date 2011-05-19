@@ -16,214 +16,225 @@ require 'base64'
 require 'backup'
 require 'encbsconfig'
 
-opts = Slop.parse :help => true do
-  on :a, :add, "Add path to backup", true
-  on :b, :bucket, "Set Amazon S3 bucket to backup", true
-  on :c, :config, "Use config file to upload backup", true
-  on :colorize, "Colorize print to console"
-  on :d, :date, "Date for backup restore (default: last)", true
-  on :g, :generate, "Generate RSA keys (option: 4096, 2048)", true
-  on :h, :hostname, "Set hostname (default: system)", true
-  on :i, :increment, "Use increment mode for backup (default: false)"
-  on :j, :jar, "Versions of jar (option: hash or path)", true
-  on :k, :key, "Set API key to access Amazon S3", true
-  on :l, :local, "Backup in local directory", true
-  on :list, "List of jars"
-  on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
-  on :s, :secret, "Set API secret to access Amazon S3", true
-  on :t, :to, "Path to recovery (default: /)", true
-  on :token, "RSA key to encrypt/decrypt backup data", true
-  on :size, "RSA private key length (default: 4096)", true
-  on :v, :verbose, "Verbose mode"
-
-  banner "Usage:\n    $ encbs [options]\n\nOptions:"
-end
-
-@config = EncbsConfig.new
-
-if ARGV.empty?
-  if File.exists?("#{Dir.getwd}/Encbsfile")
-    @config.load "#{Dir.getwd}/Encbsfile"
+begin
+  if lock_exists?
+    puts_fail "Lock file exists. Make sure that an encbs instance does not exists."
   else
-    puts opts.help
+    create_lock
+  end
+
+  opts = Slop.parse :help => true do
+    on :a, :add, "Add path to backup", true
+    on :b, :bucket, "Set Amazon S3 bucket to backup", true
+    on :c, :config, "Use config file to upload backup", true
+    on :colorize, "Colorize print to console"
+    on :d, :date, "Date for backup restore (default: last)", true
+    on :g, :generate, "Generate RSA keys (option: 4096, 2048)", true
+    on :h, :hostname, "Set hostname (default: system)", true
+    on :i, :increment, "Use increment mode for backup (default: false)"
+    on :j, :jar, "Versions of jar (option: hash or path)", true
+    on :k, :key, "Set API key to access Amazon S3", true
+    on :l, :local, "Backup in local directory", true
+    on :list, "List of jars"
+    on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
+    on :s, :secret, "Set API secret to access Amazon S3", true
+    on :t, :to, "Path to recovery (default: /)", true
+    on :token, "RSA key to encrypt/decrypt backup data", true
+    on :size, "RSA private key length (default: 4096)", true
+    on :v, :verbose, "Verbose mode"
+
+    banner "Usage:\n    $ encbs [options]\n\nOptions:"
+  end
+
+  @config = EncbsConfig.new
+
+  if ARGV.empty?
+    if File.exists?("#{Dir.getwd}/Encbsfile")
+      @config.load "#{Dir.getwd}/Encbsfile"
+    else
+      puts opts.help
+      exit
+    end
+  end
+
+  @config.load opts[:config] if opts.config?
+
+  $PRINT_VERBOSE = @config.verbose || opts.verbose?
+  $COLORIZE = @config.colorize || opts.colorize?
+
+  if opts.generate?
+    bits = opts[:generate].to_i
+    puts_fail "Unsupport #{bits} bits" unless bits == 4096 or bits == 2048
+    puts "Generate #{bits} bits RSA keys"
+    Crypto::create_keys(
+      File.join(Dir.getwd, "rsa_key"),
+    	File.join(Dir.getwd, "rsa_key.pub"),
+    	bits
+    )
+    puts "Done!"
+
     exit
   end
-end
 
-@config.load opts[:config] if opts.config?
-
-$PRINT_VERBOSE = @config.verbose || opts.verbose?
-$COLORIZE = @config.colorize || opts.colorize?
-
-if opts.generate?
-  bits = opts[:generate].to_i
-  puts_fail "Unsupport #{bits} bits" unless bits == 4096 or bits == 2048
-  puts "Generate #{bits} bits RSA keys"
-  Crypto::create_keys(
-    File.join(Dir.getwd, "rsa_key"),
-  	File.join(Dir.getwd, "rsa_key.pub"),
-  	bits
-  )
-  puts "Done!"
-
-  exit
-end
-
-if opts.local?
-  try_create_dir opts[:local]
-  @backup = Backup::Instance.new opts[:local]
-else
-  [:key, :secret, :bucket].each do |arg|
-    if opts[arg].nil? and @config.send(arg).nil?
-      puts_fail "Argument '--#{arg}' should not be empty"
-    end
-  end
-  @backup = Backup::Instance.new(
-    "backups",
-    true,
-    :bucket => @config.bucket || opts[:bucket],
-    :key => @config.key || opts[:key],
-    :secret => @config.secret || opts[:secret]
-  )
-end
-
-@backup.hostname = @config.hostname || (opts[:hostname] if opts.hostname?)
-
-if opts.list?
-  jars_list = @backup.jars
-
-  unless jars_list.empty?
-    puts "List of jars:\n"
-    jars_list.keys.sort.each do |key|
-      puts "    #{key.dark_green}: #{jars_list[key]}"
-    end
+  if opts.local?
+    try_create_dir opts[:local]
+    @backup = Backup::Instance.new opts[:local]
   else
-    puts "Nothing to listing."
+    [:key, :secret, :bucket].each do |arg|
+      if opts[arg].nil? and @config.send(arg).nil?
+        puts_fail "Argument '--#{arg}' should not be empty"
+      end
+    end
+    @backup = Backup::Instance.new(
+      "backups",
+      true,
+      :bucket => @config.bucket || opts[:bucket],
+      :key => @config.key || opts[:key],
+      :secret => @config.secret || opts[:secret]
+    )
   end
 
-  exit
-end
+  @backup.hostname = @config.hostname || (opts[:hostname] if opts.hostname?)
 
-if @config.token || opts.token?
-  key = @config.token || opts[:token]
-  size = @config.size || opts[:size]
+  if opts.list?
+    jars_list = @backup.jars
 
-  puts_fail "Key #{key.dark_green} not found" unless File.exists? key
-
-  @backup.rsa_key(key, size.to_i)
-end
-
-if opts.date?
-  date = opts[:date].split("-")
-
-  unless date.length == 1
-    @start_date = Backup::Timestamp.parse_timestamp date[0]
-    @end_date = Backup::Timestamp.parse_timestamp date[1], true
-
-    puts_fail "Last date less than start date" if start_date > end_date
-  else
-    @start_date = Backup::Timestamp.parse_timestamp date[0]
-    @end_date = Backup::Timestamp.parse_timestamp date[0], true
-  end
-else
-  @start_date = nil
-  @end_date = Time.now.utc
-end
-
-if opts.jar?
-  opts[:jar].split(" ").each do |jar|
-    versions = @backup.jar_versions(jar)
-
-    unless versions.empty?
-      puts "Versions of backup '#{jar}':"
-
-      versions.each do |version|
-        puts " => #{version.dark_green}: #{Backup::Timestamp.to_str(version)}"
+    unless jars_list.empty?
+      puts "List of jars:\n"
+      jars_list.keys.sort.each do |key|
+        puts "    #{key.dark_green}: #{jars_list[key]}"
       end
     else
-      puts "Versions doesn't exists for jar: #{jar}"
-    end
-  end
-
-  exit
-end
-
-#TODO: Support rescue option as hash
-if opts.rescue?
-  paths = opts[:rescue].split(" ")
-  jars_list = @backup.jars
-
-  include_path = lambda {|path| jars_list.keys.include? path}
-
-  jars_hashes = paths.map do |path|
-    path = File.expand_path path
-
-    unless include_path[path] or include_path["#{path}/"]
-      puts_fail "Jar \"#{path}\" not exists." 
+      puts "Nothing to listing."
     end
 
-    jars_list[path] || jars_list["#{path}/"]
+    exit
   end
 
-  if opts.to?
-    @to = File.expand_path opts[:to]
-    try_create_dir @to
-  else
-    @to = "/"
+  if !!@config.token || opts.token?
+    key = @config.token || opts[:token]
+    puts_fail "Key #{key.dark_green} not found" unless File.exists? key
+
+    size = (@config.size || opts[:size]).to_i
+    puts_fail "Unsupport #{size} bits" unless size == 4096 or size == 2048
+
+    @backup.rsa_key(key, size)
   end
 
-  #TODO: Confirm flag
-  #TODO: Empty destination directory
+  if opts.date?
+    date = opts[:date].split("-")
 
-  @index = {}
+    unless date.length == 1
+      @start_date = Backup::Timestamp.parse_timestamp date[0]
+      @end_date = Backup::Timestamp.parse_timestamp date[1], true
 
-  jars_hashes.each do |hash|
-    versions = @backup.jar_versions(hash)
-    # puts "Versions: #{versions}" #FIXME
-
-    last_version = Backup::Timestamp.last_from(versions, @end_date, @start_date)
-
-    unless last_version.nil?
-      @index[hash] = last_version
+      puts_fail "Last date less than start date" if start_date > end_date
     else
-      error_path = "#{Backup::Jar.hash_to_path(@backup.file_item, @backup.root_path, hash)}"
-      start_date = Backup::Timestamp.to_s(@start_date)
-      end_date = Backup::Timestamp.to_s(@end_date)
+      @start_date = Backup::Timestamp.parse_timestamp date[0]
+      @end_date = Backup::Timestamp.parse_timestamp date[0], true
+    end
+  else
+    @start_date = nil
+    @end_date = Time.now.utc
+  end
 
-      unless @start_date.nil?
-        puts_fail "Nothing found for #{error_path}, between date: #{start_date} - #{end_date}"
+  if opts.jar?
+    opts[:jar].split(" ").each do |jar|
+      versions = @backup.jar_versions(jar)
+
+      unless versions.empty?
+        puts "Versions of backup '#{jar}':"
+
+        versions.each do |version|
+          puts " => #{version.dark_green}: #{Backup::Timestamp.to_str(version)}"
+        end
       else
-        puts_fail "Nothing found for #{error_path}, for date: #{end_date}"
+        puts "Versions doesn't exists for jar: #{jar}"
       end
     end
+
+    exit
   end
 
-  @index.each do |hash, timestamp|
-    # puts "#{hash}: #{timestamp}" #FIXME
-    @backup.restore_jar_to(hash, timestamp, @to)
+  #TODO: Support rescue option as hash
+  if opts.rescue?
+    paths = opts[:rescue].split(" ")
+    jars_list = @backup.jars
+
+    include_path = lambda {|path| jars_list.keys.include? path}
+
+    jars_hashes = paths.map do |path|
+      path = File.expand_path path
+
+      unless include_path[path] or include_path["#{path}/"]
+        puts_fail "Jar \"#{path}\" not exists." 
+      end
+
+      jars_list[path] || jars_list["#{path}/"]
+    end
+
+    if opts.to?
+      @to = File.expand_path opts[:to]
+      try_create_dir @to
+    else
+      @to = "/"
+    end
+
+    #TODO: Confirm flag
+    #TODO: Empty destination directory
+
+    @index = {}
+
+    jars_hashes.each do |hash|
+      versions = @backup.jar_versions(hash)
+      # puts "Versions: #{versions}" #FIXME
+
+      last_version = Backup::Timestamp.last_from(versions, @end_date, @start_date)
+
+      unless last_version.nil?
+        @index[hash] = last_version
+      else
+        error_path = "#{Backup::Jar.hash_to_path(@backup.file_item, @backup.root_path, hash)}"
+        start_date = Backup::Timestamp.to_s(@start_date)
+        end_date = Backup::Timestamp.to_s(@end_date)
+
+        unless @start_date.nil?
+          puts_fail "Nothing found for #{error_path}, between date: #{start_date} - #{end_date}"
+        else
+          puts_fail "Nothing found for #{error_path}, for date: #{end_date}"
+        end
+      end
+    end
+
+    @index.each do |hash, timestamp|
+      # puts "#{hash}: #{timestamp}" #FIXME
+      @backup.restore_jar_to(hash, timestamp, @to)
+    end
+
+    puts "Done!".green
+    exit
   end
 
-  puts "Done!".green
-  exit
-end
+  if !!@config.paths or opts.add?
+    if opts.add?
+      paths = opts[:add].split(" ")
+    else
+      paths = @config.paths.split(" ")
+    end
 
-if !!@config.paths or opts.add?
-  if opts.add?
-    paths = opts[:add].split(" ")
-  else
-    paths = @config.paths.split(" ")
+    paths = paths.map do |path|
+      path = File.expand_path path
+      puts_fail "Path \"#{path}\" not exists." unless File.exists? path
+
+      path
+    end
+
+    paths.each do |path|
+      @backup.create! path, @config.increment || opts.increment?
+    end
+
+    puts "Done!".green
   end
-
-  paths = paths.map do |path|
-    path = File.expand_path path
-    puts_fail "Path \"#{path}\" not exists." unless File.exists? path
-
-    path
-  end
-
-  paths.each do |path|
-    @backup.create! path, @config.increment || opts.increment?
-  end
-
-  puts "Done!".green
+ensure
+  remove_lock
 end
