@@ -217,6 +217,24 @@ begin
   end
 
   if !!@config.paths or opts.add?
+    if File.exists? "/var/tmp/encbs.swap"
+      meta = YAML::load open("/var/tmp/encbs.swap").read
+      jar_path, timestamp = meta[:jar_path], meta[:timestamp]
+      dirs = @backup.file_item.dir File.expand_path("../", jar_path)
+      
+      if dirs.include? File.basename(jar_path)
+        meta.delete :timestamp
+        meta.delete :jar_path
+
+        @backup.file_item.create_file_once(
+          "#{jar_path}/#{timestamp}.yml",
+          meta.to_yaml
+        )
+        
+        FileUtils.rm "/var/tmp/encbs.swap"
+      end
+    end
+    
     if opts.add?
       paths = opts[:add].split(" ")
     else

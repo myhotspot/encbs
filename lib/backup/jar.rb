@@ -69,19 +69,19 @@ module Backup
       pbar.bar_mark = '*'
 
       #@local_files = @meta_index.select {|k, v| v[:timestamp] == @timestamp if v.is_a? Hash}
-      
+
       begin
         @local_files.keys.each do |file|
           if @meta_index[file].nil?
             unless Dir.exists?(file)
               data = StringIO.new File.open(file, 'rb').read
               checksum = Digest::MD5.hexdigest(data.read)
-          
+
               data.seek 0
               data = @key.encrypt_to_stream(data) if @key
               
               #FIXME
-              #puts_fail "Error on #{file}" if (1..50).to_a.shuffle[0] == 1
+              puts_fail "Error on #{file}" if (1..50).to_a.shuffle[0] == 1
 
               @file_item.create_file_once(
                 "#{jar_data_path}/#{@file_item.file_hash file}",
@@ -97,6 +97,10 @@ module Backup
           end
         end
       rescue Exception => e
+        @meta_index.merge!({
+          :jar_path => meta_jar_path,
+          :timestamp => @timestamp
+        })
         File.open("/var/tmp/encbs.swap", "w") do |f|
           f.puts @meta_index.to_yaml
         end

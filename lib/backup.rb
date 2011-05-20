@@ -21,7 +21,7 @@ module Backup
 
     def hostname=(host)
       @hostname = host
-      @root_path = "#{root_path}/#{@hostname}"
+      @root_path = "#{@root_path}/#{@hostname}"
     end
 
     def rsa_key(path, size)
