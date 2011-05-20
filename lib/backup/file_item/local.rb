@@ -1,8 +1,14 @@
 require 'backup/file_item/base'
 
 module Backup
-	module FileItem
+  module FileItem
     class Local < Backup::FileItem::Base
+      attr_reader :timeout
+      
+      def initialize
+        @timeout = 0
+      end
+
       def create_directory_once(*directories)
         directories.each do |path|
           FileUtils.mkdir_p(path) unless Dir.exists?(path)
@@ -16,6 +22,9 @@ module Backup
 
       def read_file(file)
         File.open(file, 'rb').read if File.exists? file
+      end
+      
+      def timeout=(time)
       end
 
       def dir(path, mask = "*")

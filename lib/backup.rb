@@ -15,13 +15,14 @@ module Backup
       end
 
       @hostname = Socket.gethostname
+      @_root_path = @root_path
       @root_path = "#{root_path}/#{@hostname}"
       @timestamp = Backup::Timestamp.create
     end
 
     def hostname=(host)
       @hostname = host
-      @root_path = "#{@root_path}/#{@hostname}"
+      @root_path = "#{@_root_path}/#{@hostname}"
     end
 
     def rsa_key(path, size)

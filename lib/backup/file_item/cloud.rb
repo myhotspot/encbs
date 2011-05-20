@@ -3,7 +3,7 @@ require 'backup/file_item/base'
 module Backup
 	module FileItem
     class Cloud < Backup::FileItem::Base
-      attr_reader :key, :secret, :backet, :provider
+      attr_reader :key, :secret, :backet, :provider, :timeout
 
       def initialize(args = {})
         puts_fail "Empty hash in Cloud initialize method" if args.empty?
@@ -12,12 +12,16 @@ module Backup
           puts_fail "'#{arg.to_s.green}' should not be empty" if args[arg].nil?
           instance_eval %{@#{arg} = args[:#{arg}]}
         end
+        @timeout = 60
 
-       try_to_connect_with_cloud 
+        try_to_connect_with_cloud 
+      end
+      
+      def timeout=(time)
+        @timeout = time
       end
 
       def create_directory_once(*directories)
-        # Nothing happen
       end
 
       def create_file_once(file, data)
@@ -44,7 +48,7 @@ module Backup
         files = @directory.files.all(
           :prefix => path,
           :max_keys => 30_000
-        ).map &:key
+        ).map(&:key)
         
         files.map do |item|
           match = item.match(/^#{path}\/([^\/]+#{mask}).*$/)
@@ -64,6 +68,7 @@ module Backup
         begin
           yield
         rescue Exception => e
+          sleep @timeout
           try_to_connect_with_cloud 
 
           yield

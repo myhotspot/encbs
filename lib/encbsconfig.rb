@@ -1,6 +1,6 @@
 class EncbsConfig
   attr_reader :paths, :bucket, :colorize, :hostname, :increment, :key,
-              :secret, :size, :token, :verbose
+              :secret, :size, :token, :timeout, :verbose
 
   def initialize
     @paths = ""
@@ -8,14 +8,14 @@ class EncbsConfig
 
   def load(path)
     [:bucket, :colorize, :hostname, :increment, :key, :secret, :size,
-      :token, :verbose].each {|attr| eval "@#{attr} = nil"}
+      :token, :timeout, :verbose].each {|attr| eval "@#{attr} = nil"}
 
     @paths = ""
 
     eval "#{open(path).read}"
   end
 
-  def use_hostname(attr)
+  def use_hostname attr
     @hostname = attr
   end
 
@@ -27,7 +27,7 @@ class EncbsConfig
     @colorize = true
   end
 
-  def public_key(attr)
+  def public_key attr
     @token = attr
   end
 
@@ -35,23 +35,27 @@ class EncbsConfig
     @increment = true
   end
 
-  def aws_key(attr)
+  def aws_key attr
     @key = attr
   end
 
-  def aws_secret(attr)
+  def aws_secret attr
     @secret = attr
   end
 
-  def aws_bucket(attr)
+  def aws_bucket attr
     @bucket = attr
   end
 
-  def key_size(attr)
+  def key_size attr
     @size = attr
   end
 
   def verbose!
     @verbose = true
+  end
+  
+  def set_timeout attr
+    @timeout = attr
   end
 end

@@ -8,5 +8,9 @@ doc
 pkg
 rdoc
 rsa_key
+rsa_key.2048
+rsa_key.4096
 rsa_key.pub
+rsa_key.pub.2048
+rsa_key.pub.4096
 test/fixtures/backups

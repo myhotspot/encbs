@@ -39,7 +39,7 @@ begin
     on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
     on :s, :secret, "Set API secret to access Amazon S3", true
     on :t, :to, "Path to recovery (default: /)", true
-    on :timeout, "Timeout(sec) to try pushing into cloud (default: 60s)" #TODO
+    on :timeout, "Timeout(sec) to try pushing into cloud (default: 60s)", true
     on :token, "RSA key to encrypt/decrypt backup data", true
     on :size, "RSA private key length (default: 4096)", true
     on :v, :verbose, "Verbose mode"
@@ -95,7 +95,11 @@ begin
     )
   end
 
-  @backup.hostname = @config.hostname || (opts[:hostname] if opts.hostname?)
+  hostname = @config.hostname || opts[:hostname] if opts.hostname?
+  @backup.hostname = hostname unless hostname.nil?
+
+  timeout = @config.timeout || opts[:timeout] if opts.timeout?
+  @backup.file_item.timeout = timeout unless timeout.nil?
 
   if opts.list?
     jars_list = @backup.jars
@@ -208,7 +212,6 @@ begin
     end
 
     @index.each do |hash, timestamp|
-      # puts "#{hash}: #{timestamp}" #FIXME
       @backup.restore_jar_to(hash, timestamp, @to)
     end
 
