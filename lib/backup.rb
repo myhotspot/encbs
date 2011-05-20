@@ -54,7 +54,7 @@ module Backup
       end
 
       pbar = ProgressBar.new(
-      	"Restoring",
+        "Restoring",
         files.keys.length
       )
       pbar.bar_mark = '*'
@@ -76,7 +76,7 @@ module Backup
             restore_file,
             file_ok[:uid],
             file_ok[:gid],
-        		current_file[:uid],
+            current_file[:uid],
             current_file[:gid]
           )
         else
@@ -91,7 +91,7 @@ module Backup
               remote_path += "/#{@file_item.file_hash file}"
 
               data = @file_item.read_file(remote_path)
-							data = @key.decrypt_from_stream data if @key
+              data = @key.decrypt_from_stream data if @key
               f.puts data
             end
 
@@ -99,7 +99,7 @@ module Backup
           
             check_mode(restore_file, file_ok[:mode], current_file[:mode])
             check_rights(
-            	restore_file,
+              restore_file,
               file_ok[:uid],
               file_ok[:gid],
               current_file[:uid],

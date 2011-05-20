@@ -9,7 +9,7 @@ module Backup
         end
       end
 
-      def stat(file, timestamp = nil)
+      def stat(file)
         files = {}
 
         stat = File.new(file).stat
@@ -18,10 +18,8 @@ module Backup
           :gid => stat.gid,
           :mode => stat.mode
         }
-        files[file][:timestamp] = timestamp if timestamp
-
         unless Dir.exists?(file)
-          files[file][:checksum] = Digest::MD5.hexdigest(File.open(file).read)
+          files[file][:checksum] = Digest::MD5.hexdigest File.open(file, 'rb').read
         end
 
         files

@@ -12,30 +12,22 @@ class BackupFileItemTest < Test::Unit::TestCase
   end
 
   def test_file_stat
-    file = @file_item.stat(
-      __FILE__,
-      Backup::Timestamp.create
-    )
+    file = @file_item.stat __FILE__
     key = file.keys.first
 
     assert_not_nil file[key][:uid]
     assert_not_nil file[key][:gid]
     assert_not_nil file[key][:mode]
     assert_not_nil file[key][:checksum]
-    assert_not_nil file[key][:timestamp]
   end
 
   def test_directory_stat
-    file = @file_item.stat(
-      File.dirname(__FILE__),
-      Backup::Timestamp.create
-    )
+    file = @file_item.stat File.dirname(__FILE__)
     key = file.keys.first
 
     assert_not_nil file[key][:uid]
     assert_not_nil file[key][:gid]
     assert_not_nil file[key][:mode]
     assert_nil file[key][:checksum]
-    assert_not_nil file[key][:timestamp]
   end
 end

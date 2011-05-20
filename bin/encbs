@@ -39,6 +39,7 @@ begin
     on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
     on :s, :secret, "Set API secret to access Amazon S3", true
     on :t, :to, "Path to recovery (default: /)", true
+    on :timeout, "Timeout(sec) to try pushing into cloud (default: 60s)" #TODO
     on :token, "RSA key to encrypt/decrypt backup data", true
     on :size, "RSA private key length (default: 4096)", true
     on :v, :verbose, "Verbose mode"
