@@ -12,7 +12,7 @@ module Backup
       Digest::MD5.hexdigest(@local_path)
     end
 
-    def save(increment = false)
+    def save increment = false, compression = nil
       @meta_index = {}
       @local_files = hash_local_files
 
@@ -48,6 +48,13 @@ module Backup
           :checksum => Base64.encode64(@key.encrypt(@timestamp))
         })
       end
+
+      unless compression.nil?
+        @meta_index.merge!({
+          :compression => compression.type.to_s
+        })
+      end
+
       @file_item.create_directory_once meta_jars_path, meta_jar_path, jar_data_path
       @file_item.create_file_once(
         "#{meta_jars_path}/#{jar_hash}",
@@ -78,11 +85,10 @@ module Backup
               checksum = Digest::MD5.hexdigest(data.read)
 
               data.seek 0
+              data = compression.compress(data.read, 3) unless compression.nil?
+
               data = @key.encrypt_to_stream(data) if @key
               
-              #FIXME
-              puts_fail "Error on #{file}" if (1..50).to_a.shuffle[0] == 1
-
               @file_item.create_file_once(
                 "#{jar_data_path}/#{@file_item.file_hash file}",
                 data

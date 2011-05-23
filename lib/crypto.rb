@@ -29,13 +29,13 @@ module Crypto
         encrypt_data << encrypt(buf)
       end
   
-      encrypt_data.seek(0)
+      encrypt_data.seek 0
       encrypt_data
     end
 
     def decrypt_from_stream(data)
       encrypt_data = StringIO.new(data.chomp)
-      encrypt_data.seek(0)
+      encrypt_data.seek 0
       decrypt_data = ""
   
       while buf = encrypt_data.read(@size) do

@@ -1,18 +1,18 @@
 class EncbsConfig
-  attr_reader :paths, :bucket, :colorize, :hostname, :increment, :key,
-              :secret, :size, :token, :timeout, :verbose
+  attr_reader :paths, :bucket, :colorize, :compression, :hostname, :increment,
+              :key, :secret, :size, :token, :timeout, :verbose
 
   def initialize
     @paths = ""
   end
 
   def load(path)
-    [:bucket, :colorize, :hostname, :increment, :key, :secret, :size,
-      :token, :timeout, :verbose].each {|attr| eval "@#{attr} = nil"}
+    [:bucket, :colorize, :compression, :hostname, :increment, :key, :secret,
+      :size, :token, :timeout, :verbose].each {|attr| eval "@#{attr} = nil"}
 
     @paths = ""
 
-    eval "#{open(path).read}"
+    instance_eval "#{open(path).read}"
   end
 
   def use_hostname attr
@@ -33,6 +33,10 @@ class EncbsConfig
 
   def increment!
     @increment = true
+  end
+  
+  def use_compression attr
+    @compression = attr
   end
 
   def aws_key attr

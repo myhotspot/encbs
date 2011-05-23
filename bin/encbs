@@ -11,6 +11,8 @@ require 'helpers'
 require 'slop'
 # require 'fog'
 require 'progressbar'
+require 'lzoruby'
+require 'zlib'
 require 'base64'
 
 require 'backup'
@@ -28,6 +30,7 @@ begin
     on :b, :bucket, "Set Amazon S3 bucket to backup", true
     on :c, :config, "Use config file to upload backup", true
     on :colorize, "Colorize print to console"
+    on :compression, "Use gzip for file (de)compression (option: gzip, lzo)", true
     on :d, :date, "Date for backup restore (default: last)", true
     on :g, :generate, "Generate RSA keys (option: 4096, 2048)", true
     on :h, :hostname, "Set hostname (default: system)", true
@@ -100,6 +103,9 @@ begin
 
   timeout = @config.timeout || opts[:timeout] if opts.timeout?
   @backup.file_item.timeout = timeout unless timeout.nil?
+
+  compression = @config.compression || opts[:compression] if opts.compression?
+  @backup.compression = compression unless compression.nil?
 
   if opts.list?
     jars_list = @backup.jars

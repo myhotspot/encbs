@@ -1,11 +1,14 @@
+require 'stringio'
+
 require 'backup/file_item'
 require 'backup/timestamp'
 require 'backup/jar'
+require 'archive'
 require 'crypto'
 
 module Backup
   class Instance
-    attr_reader :root_path, :timestamp, :hostname, :file_item
+    attr_reader :root_path, :timestamp, :hostname, :file_item, :compression
 
     def initialize(root_path, cloud = false, *args)
       if cloud
@@ -20,6 +23,10 @@ module Backup
       @timestamp = Backup::Timestamp.create
     end
 
+    def compression= type
+      @compression = Archive.new type.to_sym
+    end
+
     def hostname=(host)
       @hostname = host
       @root_path = "#{@_root_path}/#{@hostname}"
@@ -31,7 +38,7 @@ module Backup
 
     def create!(local_path, increment = false)
       jar = Jar.new(@file_item, @root_path, local_path, @key)
-      jar.save(increment)
+      jar.save(increment, @compression)
     end
 
     def jars
@@ -52,6 +59,13 @@ module Backup
           puts_fail "Checksum does not match."
         end
         files.delete :checksum
+      end
+
+      unless files[:compression].nil?
+        compression = Archive.new files[:compression].to_sym
+        files.delete :compression
+      else
+        compression = nil
       end
 
       pbar = ProgressBar.new(
@@ -93,6 +107,11 @@ module Backup
 
               data = @file_item.read_file(remote_path)
               data = @key.decrypt_from_stream data if @key
+
+              unless compression.nil?
+                data = compression.decompress(data.chomp).read
+              end
+
               f.puts data
             end
 

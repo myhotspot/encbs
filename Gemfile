@@ -3,6 +3,7 @@ source "http://rubygems.org"
 gem "fog"
 gem "slop"
 gem "ruby-progressbar"
+gem "lzoruby"
 
 group :development do
   gem "bundler", "~> 1.0.0"
