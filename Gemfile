@@ -6,6 +6,7 @@ gem "ruby-progressbar"
 gem "lzoruby"
 
 group :development do
+  gem "rake", "0.8.4"
   gem "bundler", "~> 1.0.0"
   gem "jeweler", "~> 1.6.0"
   gem "rcov", ">= 0"
