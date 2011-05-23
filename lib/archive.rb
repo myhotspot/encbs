@@ -22,7 +22,7 @@ class Archive
   attr_reader :type
 
   def initialize type
-    fail "Error" unless [:lzo, :gzip].include? type.downcase
+    puts_fail "Unsupported type" unless [:lzo, :gzip].include? type.downcase
     instance_eval %{@type = #{type.to_s.upcase}}
   end
   
