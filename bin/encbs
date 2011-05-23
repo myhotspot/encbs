@@ -30,7 +30,7 @@ begin
     on :b, :bucket, "Set Amazon S3 bucket to backup", true
     on :c, :config, "Use config file to upload backup", true
     on :colorize, "Colorize print to console"
-    on :compression, "Use gzip for file (de)compression (option: gzip, lzo)", true
+    on :compression, "Use compression for files (option: gzip, lzo)", true
     on :d, :date, "Date for backup restore (default: last)", true
     on :g, :generate, "Generate RSA keys (option: 4096, 2048)", true
     on :h, :hostname, "Set hostname (default: system)", true
