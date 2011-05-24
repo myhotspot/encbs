@@ -27,26 +27,26 @@ module Backup
       @compression = Archive.new type.to_sym
     end
 
-    def hostname=(host)
+    def hostname= host
       @hostname = host
       @root_path = "#{@_root_path}/#{@hostname}"
     end
 
-    def rsa_key(path, size)
+    def rsa_key path, size
       @key = Crypto::Key.from_file(path, size)
     end
 
-    def create!(local_path, increment = false)
-      jar = Jar.new(@file_item, @root_path, local_path, @key)
-      jar.save(increment, @compression)
+    def create! local_path, increment = false, purge_previous = false
+      jar = Jar.new @file_item, @root_path, local_path, @key
+      jar.save increment, @compression, purge_previous
     end
 
     def jars
-      Jar.all(@file_item, @root_path)
+      Jar.all @file_item, @root_path
     end
 
-    def jar_versions(jar)
-      Jar.jar_versions(@file_item, @root_path, jar, !!jar[/^[0-9a-z]{32}$/])
+    def jar_versions jar
+      Jar.jar_versions @file_item, @root_path, jar, !!jar[/^[0-9a-z]{32}$/]
     end
 
     def restore_jar_to(hash, timestamp, to)

@@ -39,12 +39,13 @@ begin
     on :k, :key, "Set API key to access Amazon S3", true
     on :l, :local, "Backup in local directory", true
     on :list, "List of jars"
+    on :p, :purge, "Remove previous backup(s)"
     on :r, :rescue, "Return data from backup (option: jar, path or filter)", true
     on :s, :secret, "Set API secret to access Amazon S3", true
+    on :size, "RSA private key length (default: 4096)", true
     on :t, :to, "Path to recovery (default: /)", true
     on :timeout, "Timeout(sec) to try pushing into cloud (default: 60s)", true
     on :token, "RSA key to encrypt/decrypt backup data", true
-    on :size, "RSA private key length (default: 4096)", true
     on :v, :verbose, "Verbose mode"
 
     banner "Usage:\n    $ encbs [options]\n\nOptions:"
@@ -225,7 +226,7 @@ begin
     exit
   end
 
-  if !!@config.paths or opts.add?
+  if !@config.paths.nil? or opts.add?
     if File.exists? "/var/tmp/encbs.swap"
       meta = YAML::load open("/var/tmp/encbs.swap").read
       jar_path, timestamp = meta[:jar_path], meta[:timestamp]
@@ -258,7 +259,14 @@ begin
     end
 
     paths.each do |path|
-      @backup.create! path, @config.increment || opts.increment?
+      unless opts.increment?
+        purge = @config.purge || opts.purge?
+      else
+        purge = false
+      end
+
+      increment = @config.increment || opts.increment?
+      @backup.create! path, increment, purge
     end
 
     puts "Done!".green

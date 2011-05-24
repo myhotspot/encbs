@@ -14,14 +14,34 @@ module Backup
         end
         @timeout = 60
 
-        try_to_connect_with_cloud 
+        try_to_connect_with_cloud
       end
-      
+
       def timeout=(time)
         @timeout = time
       end
 
       def create_directory_once(*directories)
+      end
+
+      def delete_file path
+        try_to_work_with_cloud do
+          file = delete_slashes(path)
+          @directory.files.get(file).destroy
+        end
+      end
+
+      def delete_dir directory
+        try_to_work_with_cloud do
+          path = delete_slashes(directory)
+
+          files = @directory.files.all(
+            :prefix => path,
+            :max_keys => 30_000
+          ).map do |file|
+            file.destroy
+          end
+        end
       end
 
       def create_file_once(file, data)
@@ -49,7 +69,7 @@ module Backup
           :prefix => path,
           :max_keys => 30_000
         ).map(&:key)
-        
+
         files.map do |item|
           match = item.match(/^#{path}\/([^\/]+#{mask}).*$/)
           match[1] if match

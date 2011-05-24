@@ -1,6 +1,6 @@
 class EncbsConfig
   attr_reader :paths, :bucket, :colorize, :compression, :hostname, :increment,
-              :key, :secret, :size, :token, :timeout, :verbose
+              :key, :purge, :secret, :size, :token, :timeout, :verbose
 
   def initialize
     @paths = ""
@@ -61,5 +61,9 @@ class EncbsConfig
   
   def set_timeout attr
     @timeout = attr
+  end
+
+  def purge!
+    @purge = true unless @increment
   end
 end

@@ -12,7 +12,7 @@ module Backup
       Digest::MD5.hexdigest(@local_path)
     end
 
-    def save increment = false, compression = nil
+    def save increment = false, compression = nil, purge = false
       @meta_index = {}
       @local_files = hash_local_files
 
@@ -118,9 +118,20 @@ module Backup
           "#{meta_jar_path}/#{@timestamp}.yml",
           @meta_index.to_yaml
         )
-      end
 
-      pbar.finish
+        pbar.finish
+
+        if purge
+          puts "Removing previous backups..."
+          previous_versions = Jar.jar_versions @file_item, @root_path, jar_hash, true
+          previous_versions.delete @timestamp
+          
+          previous_versions.each do |version|
+            @file_item.delete_file "#{meta_jar_path}/#{version}.yml"
+            @file_item.delete_dir "#{@root_path}/#{jar_hash}/#{version}"
+          end
+        end
+      end
     end
 
     def hash_local_files
