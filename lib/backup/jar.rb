@@ -80,7 +80,7 @@ module Backup
       begin
         @local_files.keys.each do |file|
           if @meta_index[file].nil?
-            unless Dir.exists?(file)
+            unless File.directory? file
               data = StringIO.new File.open(file, 'rb').read
               checksum = Digest::MD5.hexdigest(data.read)
 
@@ -137,7 +137,7 @@ module Backup
     def hash_local_files
       files = {}
 
-      if Dir.exists? @local_path
+      if File.directory? @local_path
         matches = Dir.glob(File.join(@local_path, "/**/*"), File::FNM_DOTMATCH)
 
         matches = matches.select do |match|

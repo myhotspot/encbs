@@ -2,7 +2,7 @@ module Backup
 	module FileItem
   	class Base
       def semantic_path(path)
-        if Dir.exists? path
+        if File.directory? path
           path += '/'
         else
           path
@@ -18,7 +18,7 @@ module Backup
           :gid => stat.gid,
           :mode => stat.mode
         }
-        unless Dir.exists?(file)
+        unless File.directory? file
           files[file][:checksum] = Digest::MD5.hexdigest File.open(file, 'rb').read
         end
 

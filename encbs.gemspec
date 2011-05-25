@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Timothy Klim"]
-  s.date = %q{2011-05-24}
+  s.date = %q{2011-05-25}
   s.default_executable = %q{encbs}
   s.description = %q{Simple backup system for pushing into cloud}
   s.email = %q{klimtimothy@gmail.com}
@@ -49,7 +49,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/TimothyKlim/encbs}
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.6.2}
+  s.rubygems_version = %q{1.5.2}
   s.summary = %q{Simple backup system for pushing into cloud}
 
   if s.respond_to? :specification_version then

@@ -11,7 +11,7 @@ module Backup
 
       def create_directory_once *directories
         directories.each do |path|
-          FileUtils.mkdir_p(path) unless Dir.exists?(path)
+          FileUtils.mkdir_p(path) unless File.directory? path
         end
       end
 
