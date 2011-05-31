@@ -17,7 +17,7 @@ module Backup
 
       def create_file_once file, data
         data = data.read if data.is_a? File or data.is_a? StringIO
-        File.open(file, "wb").puts(data) unless File.exists?(file)
+        File.open(file, 'wb').puts(data) unless File.exists?(file)
       end
 
       def read_file file
