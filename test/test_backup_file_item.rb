@@ -4,7 +4,7 @@ class BackupFileItemTest < Test::Unit::TestCase
   def setup
     @file_item = Backup::FileItem.for :local
   end
-  
+
   def test_semantic_path
     assert_equal __FILE__, @file_item.semantic_path(__FILE__)
     assert_equal File.dirname(__FILE__) + '/',

@@ -19,13 +19,17 @@ class TestBackup < Test::Unit::TestCase
 
     FileUtils.mkdir_p @backups_path
     FileUtils.mkdir_p @restore_path
+
+    File.open(File.expand_path('../fixtures/etc/root/file', __FILE__), 'w') do |f|
+      f.puts "Root file\n"
+    end
   end
 
-  def create_backup!
+  def create_backup! increment = false
     @local_path = File.expand_path('../fixtures/etc', __FILE__)
     @local_path_hash = Digest::MD5.hexdigest @local_path
 
-    @timestamp = @backup.create! @local_path, false, false
+    @timestamp = @backup.create! @local_path, increment, false
     @back_path = "#{@backups_path}/#{@hostname}"
   end
 
@@ -50,8 +54,14 @@ class TestBackup < Test::Unit::TestCase
     assert File.exists?("#{@back_path}/meta/jars/#{@local_path_hash}")
     assert File.exists?("#{@back_path}/#{@local_path_hash}")
 
-    assert_equal "#{@local_path}/", open("#{@back_path}/meta/jars/#{@local_path_hash}").read.chomp
-    meta_index = YAML::load open("#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml").read
+    assert_equal "#{@local_path}/", open(
+      "#{@back_path}/meta/jars/#{@local_path_hash}"
+    ).read.chomp
+
+    meta_index = YAML::load open(
+      "#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml"
+    ).read
+
     assert meta_index.has_key? @local_path
 
     root_file = File.expand_path '../fixtures/etc/root/file', __FILE__
@@ -89,6 +99,27 @@ class TestBackup < Test::Unit::TestCase
     root_file_content = open(
       File.expand_path '../fixtures/etc/root/file', __FILE__
     ).read
-    assert_equal root_file_content, open("#{@restore_path}/#{@local_path}/root/file").read
+    assert_equal root_file_content, open(
+      "#{@restore_path}/#{@local_path}/root/file"
+    ).read
+  end
+
+  def test_increment_backup
+    create_backup!
+
+    File.open(File.expand_path('../fixtures/etc/root/file', __FILE__), 'w') do |f|
+      f.puts "Changed file\n"
+    end
+
+    sleep 1
+    create_backup! true
+
+    root_file = File.expand_path '../fixtures/etc/root/file', __FILE__
+    root_file_content = open(root_file).read
+
+    assert_equal root_file_content, "Changed file\n"
+    assert_equal root_file_content, open(
+      "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
+    ).read
   end
 end
