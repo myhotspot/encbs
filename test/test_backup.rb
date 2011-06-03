@@ -1,4 +1,4 @@
-require File.expand_path("../helper.rb", __FILE__)
+require File.expand_path('../helper', __FILE__)
 
 class TestBackup < Test::Unit::TestCase
   def setup
@@ -70,6 +70,31 @@ class TestBackup < Test::Unit::TestCase
     ).read
   end
 
+  def test_create_with_crypt
+    @backup.rsa_key(
+      File.expand_path('../fixtures/rsa_key.public', __FILE__),
+      2048
+    )
+    private_key = Crypto::Key.from_file(
+      File.expand_path('../fixtures/rsa_key.private', __FILE__),
+      2048
+    )
+
+    create_backup!
+
+    root_file = File.expand_path '../fixtures/etc/root/file', __FILE__
+    root_file_content = open(root_file).read
+
+    root_file_crypt_content = open(
+      "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
+    ).read
+
+    assert_not_equal root_file_content, root_file_crypt_content
+    assert_equal root_file_content, private_key.decrypt_from_stream(
+      root_file_crypt_content
+    )
+  end
+
   def test_show_jars
     create_backup!
 
@@ -102,6 +127,30 @@ class TestBackup < Test::Unit::TestCase
     assert_equal root_file_content, open(
       "#{@restore_path}/#{@local_path}/root/file"
     ).read
+  end
+
+  def test_restore_with_decrypt
+    @backup.rsa_key(
+      File.expand_path('../fixtures/rsa_key.public', __FILE__),
+      2048
+    )
+    create_backup!
+
+    restore_path = File.expand_path '../fixtures/restore', __FILE__
+    @backup.rsa_key(
+      File.expand_path('../fixtures/rsa_key.private', __FILE__),
+      2048
+    )
+    @backup.restore_jar_to @local_path_hash, @timestamp, restore_path
+
+    root_file_content = open(
+      File.expand_path '../fixtures/etc/root/file', __FILE__
+    ).read
+    root_file_decrypt_content = open(
+      "#{@restore_path}/#{@local_path}/root/file"
+    ).read
+
+    assert_equal root_file_content, root_file_decrypt_content
   end
 
   def test_increment_backup

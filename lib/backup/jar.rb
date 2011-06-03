@@ -100,17 +100,17 @@ module Backup
             @meta_index[file][:timestamp] = @timestamp
           end
         end
-      rescue Exception => e
-        @meta_index.merge!({
-          :jar_path => meta_jar_path,
-          :timestamp => @timestamp
-        })
-        File.open("/var/tmp/encbs.swap", "w") do |f|
-          f.puts @meta_index.to_yaml
-        end
+      #rescue Exception => e
+      #  @meta_index.merge!({
+      #    :jar_path => meta_jar_path,
+      #    :timestamp => @timestamp
+      #  })
+      #  File.open("/var/tmp/encbs.swap", "w") do |f|
+      #    f.puts @meta_index.to_yaml
+      #  end
 
-        puts
-        puts_fail "Index file has been saved that to allow upload into cloud in next run."
+      #  puts
+      #  puts_fail "Index file has been saved that to allow upload into cloud in next run."
       else
         @file_item.create_file_once(
           "#{meta_jar_path}/#{@timestamp}.yml",

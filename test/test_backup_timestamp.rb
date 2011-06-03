@@ -1,4 +1,4 @@
-require File.expand_path("../helper", __FILE__)
+require File.expand_path('../helper', __FILE__)
 
 class BackupTimestampTest < Test::Unit::TestCase
   def test_parse_timestamp

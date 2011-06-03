@@ -33,7 +33,11 @@ module Backup
     end
 
     def rsa_key path, size
-      @key = Crypto::Key.from_file(path, size)
+      if File.exists? path
+        @key = Crypto::Key.from_file(path, size)
+      else
+        @key = nil
+      end
     end
 
     def create! local_path, increment = false, purge_previous = false

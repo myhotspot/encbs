@@ -4,7 +4,7 @@ module Backup
   module FileItem
     class Local < Backup::FileItem::Base
       attr_reader :timeout
-      
+
       def initialize
         @timeout = 0
       end
@@ -27,7 +27,7 @@ module Backup
           f.read
         end if File.exists? file
       end
-      
+
       def timeout= time
       end
 
