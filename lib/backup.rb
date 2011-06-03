@@ -111,7 +111,7 @@ module Backup
               remote_path += "/#{@file_item.file_hash file}"
 
               data = @file_item.read_file(remote_path)
-              data = @key.decrypt_from_stream data if @key
+              data = @key.decrypt_from_stream data.chomp if @key
 
               unless compression.nil?
                 data = compression.decompress(data.chomp).read

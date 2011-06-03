@@ -91,7 +91,7 @@ class TestBackup < Test::Unit::TestCase
 
     assert_not_equal root_file_content, root_file_crypt_content
     assert_equal root_file_content, private_key.decrypt_from_stream(
-      root_file_crypt_content
+      root_file_crypt_content.chomp
     )
   end
 

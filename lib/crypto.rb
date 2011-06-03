@@ -34,7 +34,7 @@ module Crypto
     end
 
     def decrypt_from_stream(data)
-      encrypt_data = StringIO.new(data.chomp)
+      encrypt_data = StringIO.new data
       encrypt_data.seek 0
       decrypt_data = ""
 
