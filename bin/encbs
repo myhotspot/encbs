@@ -168,21 +168,29 @@ begin
     exit
   end
 
-  #TODO: Support rescue option as hash
   if opts.rescue?
     paths = opts[:rescue].split(" ")
     jars_list = @backup.jars
+    puts jars_list
 
-    include_path = lambda {|path| jars_list.keys.include? path}
+    include_path = lambda {|path| jars_list.has_key?(path)}
 
     jars_hashes = paths.map do |path|
-      path = File.expand_path path
+      unless path.length == 32 and path.match /[0-9a-f]{32}/
+        path = File.expand_path path
 
-      unless include_path[path] or include_path["#{path}/"]
-        puts_fail "Jar \"#{path}\" not exists." 
+        unless include_path[path] or include_path["#{path}/"]
+          puts_fail "Jar \"#{path}\" not exists."
+        end
+
+        jars_list[path] || jars_list["#{path}/"]
+      else
+        unless jars_list.has_value? path
+          puts_fail "Jar with hash \"#{path}\" not exists."
+        else
+          path
+        end
       end
-
-      jars_list[path] || jars_list["#{path}/"]
     end
 
     if opts.to?
@@ -191,9 +199,6 @@ begin
     else
       @to = "/"
     end
-
-    #TODO: Confirm flag
-    #TODO: Empty destination directory
 
     @index = {}
 
@@ -230,7 +235,7 @@ begin
       meta = YAML::load open("/var/tmp/encbs.swap").read
       jar_path, timestamp = meta[:jar_path], meta[:timestamp]
       dirs = @backup.file_item.dir File.expand_path("../", jar_path)
-      
+
       if dirs.include? File.basename(jar_path)
         meta.delete :timestamp
         meta.delete :jar_path
@@ -239,11 +244,11 @@ begin
           "#{jar_path}/#{timestamp}.yml",
           meta.to_yaml
         )
-        
+
         FileUtils.rm "/var/tmp/encbs.swap"
       end
     end
-    
+
     if opts.add?
       paths = opts[:add].split(" ")
     else
