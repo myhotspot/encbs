@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{encbs}
-  s.version = "0.2.1.beta2"
+  s.version = "0.2.1"
 
-  s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
+  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Timothy Klim"]
-  s.date = %q{2011-06-03}
+  s.date = %q{2011-06-04}
   s.default_executable = %q{encbs}
   s.description = %q{Simple backup system for pushing into cloud}
   s.email = %q{klimtimothy@gmail.com}
@@ -39,12 +39,14 @@ Gem::Specification.new do |s|
     "lib/helpers.rb",
     "test/fixtures/etc/.hide",
     "test/fixtures/etc/root/file",
-    "test/fixtures/test_crypto.rb",
+    "test/fixtures/rsa_key.private",
+    "test/fixtures/rsa_key.public",
     "test/helper.rb",
     "test/test_backup.rb",
     "test/test_backup_file_item.rb",
     "test/test_backup_timestamp.rb",
-    "test/test_jar.rb"
+    "test/test_config.rb",
+    "test/test_crypto.rb"
   ]
   s.homepage = %q{http://github.com/TimothyKlim/encbs}
   s.licenses = ["MIT"]
