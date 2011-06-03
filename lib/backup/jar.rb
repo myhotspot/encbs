@@ -132,6 +132,8 @@ module Backup
           end
         end
       end
+
+      @timestamp
     end
 
     def hash_local_files
