@@ -3,27 +3,27 @@ require File.expand_path("../helper", __FILE__)
 class BackupTimestampTest < Test::Unit::TestCase
   def test_parse_timestamp
     assert_equal Backup::Timestamp.parse_timestamp("110102201130"),
-                 Time.new(2011, 01, 02, 20, 11, 30, 0)
+                 Time.utc(2011, 01, 02, 20, 11, 30, 0)
 
     assert_equal Backup::Timestamp.parse_timestamp("11.01.02. 20:11:30"),
-                 Time.new(2011, 01, 02, 20, 11, 30, 0)
+                 Time.utc(2011, 01, 02, 20, 11, 30, 0)
 
     assert_equal Backup::Timestamp.parse_timestamp("1101022011"),
-                 Time.new(2011, 01, 02, 20, 11, 0, 0)
+                 Time.utc(2011, 01, 02, 20, 11, 0, 0)
     assert_equal Backup::Timestamp.parse_timestamp("11010220"),
-                 Time.new(2011, 01, 02, 20, 0, 0, 0)
+                 Time.utc(2011, 01, 02, 20, 0, 0, 0)
     assert_equal Backup::Timestamp.parse_timestamp("110102"),
-                 Time.new(2011, 01, 02, 0, 0, 0, 0)
+                 Time.utc(2011, 01, 02, 0, 0, 0, 0)
 
     assert_equal Backup::Timestamp.parse_timestamp("1101022011", true),
-                 Time.new(2011, 01, 02, 20, 11, 59, 0)
+                 Time.utc(2011, 01, 02, 20, 11, 59, 0)
     assert_equal Backup::Timestamp.parse_timestamp("11010220", true),
-                 Time.new(2011, 01, 02, 20, 59, 59, 0)
+                 Time.utc(2011, 01, 02, 20, 59, 59, 0)
     assert_equal Backup::Timestamp.parse_timestamp("110102", true),
-                 Time.new(2011, 01, 02, 23, 59, 59, 0)
+                 Time.utc(2011, 01, 02, 23, 59, 59, 0)
 
     assert_not_equal Backup::Timestamp.parse_timestamp("110102201130"),
-                     Time.new(2011, 01, 02, 20, 11, 31, 0)
+                     Time.utc(2011, 01, 02, 20, 11, 31, 0)
 
     assert_raise(RuntimeError) { Backup::Timestamp.parse_timestamp("11d10.,130") }
   end
@@ -57,15 +57,15 @@ class BackupTimestampTest < Test::Unit::TestCase
   end
 
   def test_create_timestamp
-    time = Time.new(2011, 01, 02, 23, 59, 59, 0)
+    time = Time.utc(2011, 01, 02, 23, 59, 59, 0)
 
     assert_equal(Backup::Timestamp.create.length, 12)
     assert_equal(Backup::Timestamp.create(time), "110102235959")
   end
-  
+
   def test_formatted_timestamp
-    time = Time.new(2011, 01, 02, 23, 59, 30, 0)
-    
+    time = Time.utc(2011, 01, 02, 23, 59, 30, 0)
+
     assert_equal Backup::Timestamp.to_s(time), "11.01.02 23:59:30"
     assert_equal Backup::Timestamp.to_s(51), nil
     assert_equal Backup::Timestamp.to_str("110102235930"), "11.01.02 23:59:30"

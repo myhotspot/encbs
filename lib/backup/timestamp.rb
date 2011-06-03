@@ -16,7 +16,7 @@ module Backup
         sec = 59 if sec.nil?
       end
 
-      time = Time.new(year + 2000, month, day, hour, min, sec, 0)
+      time = Time.utc(year + 2000, month, day, hour, min, sec, 0)
     end
 
     def self.last_from(list, end_date, start_date = nil)
