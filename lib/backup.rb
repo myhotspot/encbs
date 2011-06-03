@@ -51,6 +51,7 @@ module Backup
 
     def restore_jar_to(hash, timestamp, to)
       files = Jar.fetch_index_for(@file_item, @root_path, hash, timestamp)
+      puts_fail "Jar doesn't exists" if files.nil?
 
       unless files[:checksum].nil?
         if @key.nil? or
@@ -85,7 +86,7 @@ module Backup
           File.chown current_file[:uid], current_file[:gid], restore_file
 
           file_ok = @file_item.stat(restore_file)[restore_file]
-          
+
           check_mode(restore_file, file_ok[:mode], current_file[:mode])
           check_rights(
             restore_file,
@@ -116,7 +117,7 @@ module Backup
             end
 
             file_ok = @file_item.stat(restore_file)[restore_file]
-          
+
             check_mode(restore_file, file_ok[:mode], current_file[:mode])
             check_rights(
               restore_file,

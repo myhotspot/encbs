@@ -28,14 +28,14 @@ module Backup
         @local_files.keys.each do |file|
           current = @local_files[file].dup
           current.delete(:timestamp)
-        
+
           unless @last_index[file].nil?
             backup = @last_index[file].dup
             backup.delete(:timestamp)
-        
+
             if (current == backup) or
                (!current[:checksum].nil? and current[:checksum] == backup[:checksum])
-        
+
               @meta_index[file] = @local_files[file]
               @meta_index[file][:timestamp] = @last_index[file][:timestamp]
             end
@@ -72,10 +72,8 @@ module Backup
           @local_files.keys.count
         )
       end
-      
-      pbar.bar_mark = '*'
 
-      #@local_files = @meta_index.select {|k, v| v[:timestamp] == @timestamp if v.is_a? Hash}
+      pbar.bar_mark = '*'
 
       begin
         @local_files.keys.each do |file|
@@ -88,15 +86,15 @@ module Backup
               data = compression.compress(data.read, 3) unless compression.nil?
 
               data = @key.encrypt_to_stream(data) if @key
-              
+
               @file_item.create_file_once(
                 "#{jar_data_path}/#{@file_item.file_hash file}",
                 data
               )
-          
+
               pbar.inc
             end
-        
+
             @meta_index[file] = @local_files[file]
             @meta_index[file][:checksum] = checksum
             @meta_index[file][:timestamp] = @timestamp
@@ -110,7 +108,7 @@ module Backup
         File.open("/var/tmp/encbs.swap", "w") do |f|
           f.puts @meta_index.to_yaml
         end
-        
+
         puts
         puts_fail "Index file has been saved that to allow upload into cloud in next run."
       else
@@ -125,7 +123,7 @@ module Backup
           puts "Removing previous backups..."
           previous_versions = Jar.jar_versions @file_item, @root_path, jar_hash, true
           previous_versions.delete @timestamp
-          
+
           previous_versions.each do |version|
             @file_item.delete_file "#{meta_jar_path}/#{version}.yml"
             @file_item.delete_dir "#{@root_path}/#{jar_hash}/#{version}"

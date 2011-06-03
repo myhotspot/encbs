@@ -199,7 +199,6 @@ begin
 
     jars_hashes.each do |hash|
       versions = @backup.jar_versions(hash)
-      # puts "Versions: #{versions}" #FIXME
 
       last_version = Backup::Timestamp.last_from(versions, @end_date, @start_date)
 
