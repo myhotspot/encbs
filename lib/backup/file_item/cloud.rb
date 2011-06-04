@@ -53,6 +53,15 @@ module Backup
         end
       end
 
+      def exists? file
+        try_to_work_with_cloud do
+          !@directory.files.all(
+            :prefix => file,
+            :max_keys => 1
+          ).nil?
+        end
+      end
+
       def read_file(file)
         try_to_work_with_cloud do
           file = delete_slashes(file)

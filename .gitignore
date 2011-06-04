@@ -15,3 +15,4 @@ rsa_key.pub.2048
 rsa_key.pub.4096
 test/fixtures/backups
 test/fixtures/restore
+test/cloudrc.yml

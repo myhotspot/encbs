@@ -1,0 +1,3 @@
+bucket: "encbs"
+secret: "Amazon Secret Key"
+key: "Amazon API Key"

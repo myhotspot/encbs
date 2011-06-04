@@ -15,6 +15,10 @@ module Backup
         end
       end
 
+      def exists? file
+        File.exists? file
+      end
+
       def create_file_once file, data
         data = data.read if data.is_a? File or data.is_a? StringIO
         File.open(file, 'wb') do |f|

@@ -13,6 +13,7 @@ require 'base64'
 require 'lzoruby'
 require 'zlib'
 
+require 'fog'
 require 'backup'
 require 'encbsconfig'
 

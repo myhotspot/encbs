@@ -1,6 +1,6 @@
 require File.expand_path('../helper', __FILE__)
 
-class TestBackup < Test::Unit::TestCase
+class TestLocalBackup < Test::Unit::TestCase
   def setup
     @backups_path = File.expand_path("../fixtures/backups", __FILE__)
     @restore_path = File.expand_path("../fixtures/restore", __FILE__)
@@ -46,45 +46,41 @@ class TestBackup < Test::Unit::TestCase
   def test_create
     create_backup!
 
-    assert File.exists?("#{@back_path}")
-    assert File.exists?("#{@back_path}/meta")
-    assert File.exists?("#{@back_path}/meta/#{@local_path_hash}")
-    assert File.exists?("#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml")
-    assert File.exists?("#{@back_path}/meta/jars")
-    assert File.exists?("#{@back_path}/meta/jars/#{@local_path_hash}")
-    assert File.exists?("#{@back_path}/#{@local_path_hash}")
+    assert @backup.file_item.exists?("#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml")
+    assert @backup.file_item.exists?("#{@back_path}/meta/jars/#{@local_path_hash}")
+    assert @backup.file_item.exists?("#{@back_path}/#{@local_path_hash}")
 
-    assert_equal "#{@local_path}/", open(
+    assert_equal "#{@local_path}/", @backup.file_item.read_file(
       "#{@back_path}/meta/jars/#{@local_path_hash}"
-    ).read.chomp
+    ).chomp
 
-    meta_index = YAML::load open(
+    meta_index = YAML::load @backup.file_item.read_file(
       "#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml"
-    ).read
+    )
 
     assert meta_index.has_key? @local_path
 
     root_file = File.expand_path '../fixtures/etc/root/file', __FILE__
-    assert_equal open(root_file).read, open(
+    assert_equal open(root_file).read, @backup.file_item.read_file(
       "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
-    ).read
+    )
   end
 
   def test_create_with_compress
     @backup.compression = "gzip"
     create_backup!
 
-    meta_index = YAML::load open(
+    meta_index = YAML::load @backup.file_item.read_file(
       "#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml"
-    ).read
+    )
 
     assert meta_index.has_key? :compression
     assert_equal meta_index[:compression], 'GZIP'
 
     root_file = File.expand_path '../fixtures/etc/root/file', __FILE__
-    assert_not_equal open(root_file).read, open(
+    assert_not_equal open(root_file).read, @backup.file_item.read_file(
       "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
-    ).read
+    )
   end
 
   def test_create_with_purge_previous
@@ -116,9 +112,9 @@ class TestBackup < Test::Unit::TestCase
     root_file = File.expand_path '../fixtures/etc/root/file', __FILE__
     root_file_content = open(root_file).read
 
-    root_file_crypt_content = open(
+    root_file_crypt_content = @backup.file_item.read_file(
       "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
-    ).read
+    )
 
     assert_not_equal root_file_content, root_file_crypt_content
     assert_equal root_file_content, private_key.decrypt_from_stream(
@@ -198,8 +194,8 @@ class TestBackup < Test::Unit::TestCase
     root_file_content = open(root_file).read
 
     assert_equal root_file_content, "Changed file\n"
-    assert_equal root_file_content, open(
+    assert_equal root_file_content, @backup.file_item.read_file(
       "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
-    ).read
+    )
   end
 end
