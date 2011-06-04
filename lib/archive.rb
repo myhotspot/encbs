@@ -8,7 +8,7 @@ module GZIP
     z.close
     dst
   end
-  
+
   def self.decompress string
     zstream = Zlib::Inflate.new
     buf = zstream.inflate string
@@ -22,10 +22,11 @@ class Archive
   attr_reader :type
 
   def initialize type
-    puts_fail "Unsupported type" unless [:lzo, :gzip].include? type.downcase
-    instance_eval %{@type = #{type.to_s.upcase}}
+    type = type.to_s
+    puts_fail "Unsupported type" unless %w[lzo gzip].include? type.downcase
+    instance_eval %{@type = #{type.upcase}}
   end
-  
+
   def method_missing name, *args
     StringIO.new @type.send(name, *args)
   end

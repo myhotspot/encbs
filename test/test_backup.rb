@@ -25,11 +25,11 @@ class TestBackup < Test::Unit::TestCase
     end
   end
 
-  def create_backup! increment = false
+  def create_backup! increment = false, purge = false
     @local_path = File.expand_path('../fixtures/etc', __FILE__)
     @local_path_hash = Digest::MD5.hexdigest @local_path
 
-    @timestamp = @backup.create! @local_path, increment, false
+    @timestamp = @backup.create! @local_path, increment, purge
     @back_path = "#{@backups_path}/#{@hostname}"
   end
 
@@ -68,6 +68,37 @@ class TestBackup < Test::Unit::TestCase
     assert_equal open(root_file).read, open(
       "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
     ).read
+  end
+
+  def test_create_with_compress
+    @backup.compression = "gzip"
+    create_backup!
+
+    meta_index = YAML::load open(
+      "#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml"
+    ).read
+
+    assert meta_index.has_key? :compression
+    assert_equal meta_index[:compression], 'GZIP'
+
+    root_file = File.expand_path '../fixtures/etc/root/file', __FILE__
+    assert_not_equal open(root_file).read, open(
+      "#{@back_path}/#{@local_path_hash}/#{@timestamp}/#{Digest::MD5.hexdigest root_file}"
+    ).read
+  end
+
+  def test_create_with_purge_previous
+    create_backup!
+    previous_timestamp = @timestamp.dup
+
+    sleep 1
+    create_backup! false, true
+
+    versions = @backup.jar_versions @local_path
+
+    assert_equal versions.length, 1
+    assert_equal versions.first, @timestamp
+    assert_not_equal @timestamp, previous_timestamp
   end
 
   def test_create_with_crypt
