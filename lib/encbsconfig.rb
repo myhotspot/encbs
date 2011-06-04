@@ -34,7 +34,7 @@ class EncbsConfig
   def increment!
     @increment = true
   end
-  
+
   def use_compression attr
     @compression = attr
   end
@@ -58,7 +58,7 @@ class EncbsConfig
   def verbose!
     @verbose = true
   end
-  
+
   def set_timeout attr
     @timeout = attr
   end

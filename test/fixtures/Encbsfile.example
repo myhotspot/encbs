@@ -1,0 +1,14 @@
+add "~/.oh-my-zsh"
+add "~/.zshrc"
+aws_bucket "encbs"
+aws_key "AWS_KEY"
+aws_secret "AWS_SECRET"
+colorize!
+increment!
+key_size 2048
+public_key "~/rsa_key.pub"
+purge!
+set_timeout 1000
+use_compression "gzip"
+use_hostname "Yeah"
+verbose!

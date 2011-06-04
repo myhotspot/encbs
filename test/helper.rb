@@ -14,6 +14,7 @@ require 'lzoruby'
 require 'zlib'
 
 require 'backup'
+require 'encbsconfig'
 
 def puts_fail msg
   raise msg
