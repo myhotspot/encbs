@@ -1,3 +1,4 @@
 bucket: "encbs"
-secret: "Amazon Secret Key"
+directory: "encbs_test_backups"
 key: "Amazon API Key"
+secret: "Amazon Secret Key"

@@ -3,7 +3,6 @@ require File.expand_path('../test_backup_local', __FILE__)
 
 class TestCloudBackup < TestLocalBackup
   def setup
-    @backups_path = "backups"
     @restore_path = File.expand_path("../fixtures/restore", __FILE__)
     @hostname = Socket.gethostname
 
@@ -11,6 +10,7 @@ class TestCloudBackup < TestLocalBackup
       File.expand_path "../cloudrc.yml", __FILE__
     ).read
 
+    @backups_path = cloud_rc["directory"]
     @backup = Backup::Instance.new(
       @backups_path,
       true,
@@ -28,7 +28,7 @@ class TestCloudBackup < TestLocalBackup
       f.puts "Root file\n"
     end
 
-    @backup.file_item.delete_dir "backups"
+    @backup.file_item.delete_dir @backups_path
   end
 
   def test_backup_attributes

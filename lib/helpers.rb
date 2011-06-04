@@ -34,7 +34,7 @@ end
 
 def create_lock
   open("/tmp/encbs.lock", "w") do |f|
-    f.puts Process.pid
+    f.print Process.pid
   end
 end
 

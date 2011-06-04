@@ -52,7 +52,7 @@ class TestLocalBackup < Test::Unit::TestCase
 
     assert_equal "#{@local_path}/", @backup.file_item.read_file(
       "#{@back_path}/meta/jars/#{@local_path_hash}"
-    ).chomp
+    )
 
     meta_index = YAML::load @backup.file_item.read_file(
       "#{@back_path}/meta/#{@local_path_hash}/#{@timestamp}.yml"
@@ -118,7 +118,7 @@ class TestLocalBackup < Test::Unit::TestCase
 
     assert_not_equal root_file_content, root_file_crypt_content
     assert_equal root_file_content, private_key.decrypt_from_stream(
-      root_file_crypt_content.chomp
+      root_file_crypt_content
     )
   end
 

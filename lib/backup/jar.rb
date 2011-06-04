@@ -106,7 +106,7 @@ module Backup
           :timestamp => @timestamp
         })
         File.open("/var/tmp/encbs.swap", "w") do |f|
-          f.puts @meta_index.to_yaml
+          f.print @meta_index.to_yaml
         end
 
         puts
@@ -158,7 +158,7 @@ module Backup
 
     class << self
       def hash_to_path(file_item, root_path, hash)
-        file_item.read_file("#{root_path}/meta/jars/#{hash}").chomp
+        file_item.read_file("#{root_path}/meta/jars/#{hash}")
       rescue Errno::ENOENT
         ""
       end
