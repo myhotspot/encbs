@@ -141,7 +141,7 @@ module Backup
         matches = Dir.glob(File.join(@local_path, "/**/*"), File::FNM_DOTMATCH)
 
         matches = matches.select do |match|
-          match[/\/..$/].nil? and match[/\/.$/].nil?
+          match[/\/\.\.$/].nil? and match[/\/\.$/].nil?
         end
 
         matches << @local_path
