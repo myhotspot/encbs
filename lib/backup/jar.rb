@@ -138,11 +138,19 @@ module Backup
       files = {}
 
       if File.directory? @local_path
-        matches = Dir.glob(File.join(@local_path, "/**/*"), File::FNM_DOTMATCH)
+        matches = []
+        
+        Dir.glob(File.join(@local_path, "/**/*"), File::FNM_DOTMATCH) do |file|
+          if File.file?(file) or File.directory?(file)
+            puts_fail "Permission denied: #{file}" unless File.readable?(file)
 
-        matches = matches.select do |match|
-          match[/\/\.\.$/].nil? and match[/\/\.$/].nil?
+            matches << file if file[/\/\.\.$/].nil? and file[/\/\.$/].nil?
+          end
         end
+
+        #matches = matches.select do |match|
+        #  match[/\/\.\.$/].nil? and match[/\/\.$/].nil?
+        #end
 
         matches << @local_path
 

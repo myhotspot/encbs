@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem "fog", :git => "git://github.com/TimothyKlim/fog.git"
+gem "fog4encbs"
 gem "slop"
 gem "ruby-progressbar"
 gem "lzoruby"

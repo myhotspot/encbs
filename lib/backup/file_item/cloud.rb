@@ -17,8 +17,8 @@ module Backup
         try_to_connect_with_cloud
       end
 
-      def timeout=(time)
-        @timeout = time
+      def timeout= time
+        @timeout = time.to_i
       end
 
       def create_directory_once(*directories)
