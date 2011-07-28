@@ -1,7 +1,7 @@
 require 'backup/file_item/base'
 
 module Backup
-	module FileItem
+  module FileItem
     class Cloud < Backup::FileItem::Base
       attr_reader :key, :secret, :backet, :provider, :timeout
 
