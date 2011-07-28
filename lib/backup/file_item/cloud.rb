@@ -37,7 +37,7 @@ module Backup
 
           files = @directory.files.all(
             :prefix => path,
-            :max_keys => 30_000
+            :max_keys => 1_000_000_000
           ).map do |file|
             file.destroy
           end
@@ -76,7 +76,7 @@ module Backup
 
         files = @directory.files.all(
           :prefix => path,
-          :max_keys => 30_000
+          :max_keys => 1_000_000_000
         ).map(&:key)
 
         files.map do |item|
@@ -120,6 +120,6 @@ module Backup
 
         puts_fail "Bucket '#{@bucket}' is not exists." if @directory.nil?
       end
-		end
+    end
   end
 end

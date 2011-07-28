@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 
-gem 'fog', '~> 0.10.0'
+gem 'fog', '>= 0.10.0'
 gem 'formatador'
 gem 'slop'
 gem 'ruby-progressbar'

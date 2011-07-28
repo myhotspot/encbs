@@ -7,7 +7,6 @@ require 'digest'
 require 'fileutils'
 require 'openssl'
 require 'socket'
-require 'helpers'
 require 'slop'
 require 'fog'
 require 'progressbar'
@@ -17,6 +16,7 @@ require 'base64'
 
 require 'backup'
 require 'encbsconfig'
+require 'helpers'
 
 begin
   if lock_exists?

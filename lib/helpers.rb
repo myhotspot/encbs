@@ -1,5 +1,3 @@
-require 'formatador'
-
 class Formatador
   def display_line string = ''
     super string if $PRINT_VERBOSE

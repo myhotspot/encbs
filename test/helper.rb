@@ -6,7 +6,6 @@ require 'digest'
 require 'fileutils'
 require 'openssl'
 require 'socket'
-require 'helpers'
 require 'progressbar'
 require 'test/unit'
 require 'base64'
@@ -16,6 +15,7 @@ require 'zlib'
 require 'fog'
 require 'backup'
 require 'encbsconfig'
+require 'helpers'
 
 def puts_fail msg
   raise msg
