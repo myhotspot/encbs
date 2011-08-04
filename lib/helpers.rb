@@ -1,17 +1,3 @@
-class Formatador
-  def display_line string = ''
-    super string if $PRINT_VERBOSE
-  end
-  
-  def display string = ''
-    super string if $PRINT_VERBOSE
-  end
-  
-  def display_lines lines = []
-    super lines if $PRINT_VERBOSE
-  end
-end
-
 def puts_fail(msg)
   STDERR.puts "#{"Error! ".red}#{msg}"
 
