@@ -233,20 +233,23 @@ begin
   if !@config.paths.nil? or opts.add?
     if File.exists? "/var/tmp/encbs.swap"
       meta = YAML::load open("/var/tmp/encbs.swap").read
-      jar_path, timestamp = meta[:jar_path], meta[:timestamp]
-      dirs = @backup.file_item.dir File.expand_path("../", jar_path)
 
-      if dirs.include? File.basename(jar_path)
-        meta.delete :timestamp
-        meta.delete :jar_path
+      if meta
+        jar_path, timestamp = meta[:jar_path], meta[:timestamp]
+        dirs = @backup.file_item.dir File.expand_path("../", jar_path)
 
-        @backup.file_item.create_file_once(
-          "#{jar_path}/#{timestamp}.yml",
-          meta.to_yaml
-        )
+        if dirs.include? File.basename(jar_path)
+          meta.delete :timestamp
+          meta.delete :jar_path
 
-        FileUtils.rm "/var/tmp/encbs.swap"
+          @backup.file_item.create_file_once(
+            "#{jar_path}/#{timestamp}.yml",
+            meta.to_yaml
+          )
+        end
       end
+
+      FileUtils.rm "/var/tmp/encbs.swap"
     end
 
     if opts.add?
