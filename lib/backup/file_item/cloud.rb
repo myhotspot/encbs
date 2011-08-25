@@ -46,9 +46,14 @@ module Backup
 
       def create_file_once(file, data)
         try_to_work_with_cloud do
-          @directory.files.create(
-            :key => delete_slashes(file),
-            :body => data
+          #@directory.files.create(
+          #  :key => delete_slashes(file),
+          #  :body => data
+          #)
+          @connection.put_object(
+            @bucket,
+            delete_slashes(file),
+            data
           )
         end
       end
